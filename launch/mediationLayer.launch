@@ -1,0 +1,13 @@
+<launch>
+
+  <node pkg="mediation_layer"
+    type="mediation_layer"
+    name="mediation_layer"
+    output="screen">
+
+    <rosparam param="QuadList"> ["phoenix", "valkyrie", "hippogryph", "harry", "hermione", "ron"] </rosparam>
+
+
+  </node>
+</launch>
+
