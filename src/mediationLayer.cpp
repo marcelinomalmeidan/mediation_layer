@@ -192,11 +192,6 @@ void VisualizationThread() {
 
     	}
 
-
-		// local_obj_mid_layer.arena_box_.VisualizeBox(frame_id, &quadArray);
-
-		// std::cout << "n_markers: " << quadArray.markers.size() << std::endl;
-
     	if(quadArray.markers.size() > 0) {
     		local_obj_mid_layer.pub_vis_.publish(quadArray);
     	}
