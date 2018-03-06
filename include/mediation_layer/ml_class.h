@@ -8,47 +8,13 @@
 #include "mediation_layer/helper.h"
 #include "mediation_layer/visualization_functions.h"
 #include "mediation_layer/linear_algebra.h"
+#include "mediation_layer/rk4.h"
 
 #include "visualization_msgs/MarkerArray.h"
-#include "geometry_msgs/Vector3.h"
-#include "geometry_msgs/Point.h"
-#include "geometry_msgs/PoseStamped.h"
+
 #include "px4_control/PVA.h"
 
-class rk4 {  // Runge-kutta for time-invariant systems
- public:
 
- 	// Constructors
- 	rk4();
- 	rk4(const double &k,
- 		const double &kd,
-        const double &max_vel,
-        const double &max_acc);
-
- 	// Methods
- 	void DifferentialEquation(const Eigen::Vector3d &F, 
-                              const Eigen::VectorXd &state0, 
-                              Eigen::VectorXd *state_dot);
- 	void UpdateStates(const Eigen::Vector3d &F,
-                      const double &dt);
-    void ResetStates();
-    void GetPos(Eigen::Vector3d *pos);
-    void GetPos(geometry_msgs::Point *pos);
-    void GetVel(Eigen::Vector3d *vel);
-    void GetVel(geometry_msgs::Vector3 *vel);
-    void GetAcc(Eigen::Vector3d *acc);
-    void GetAcc(geometry_msgs::Vector3 *acc);
-
- private:
-    Eigen::VectorXd state_;
-    Eigen::Vector3d accel_;
-    double max_acc_;
-    double max_vel_;
-    Eigen::MatrixXd A_;
-    Eigen::MatrixXd B_;
-    uint x_dim_;
-    uint u_dim_;
-};
 
 struct QuadData {
     std::string name;                            // Unique name for vehicle

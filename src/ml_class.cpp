@@ -1,120 +1,5 @@
 #include "mediation_layer/ml_class.h"
 
-// Runge-kutta class ----------------------------------------------
-rk4::rk4() {
-
-}
-
-rk4::rk4(const double &k, const double &kd,
-         const double &max_vel, const double &max_acc) {
-	x_dim_ = 6;
-	u_dim_ = 3;
-	state_ = Eigen::MatrixXd::Zero(x_dim_, 1);
-	accel_ = Eigen::Vector3d::Zero();
-	max_acc_ = max_acc;
-	max_vel_ = max_vel;
-	A_ = Eigen::MatrixXd::Zero(x_dim_, x_dim_);
-	B_ = Eigen::MatrixXd::Zero(x_dim_, u_dim_);
-
-	for(uint i = 0; i < 3; i++) {
-		A_(i,i+3) = 1;
-		A_(i+3,i) = -k;
-		A_(i+3,i+3) = -kd;
-		B_(i+3,i) = -1;
-	}
-	// std::cout << "A:\n" << A << std::endl;
-	// std::cout << "B:\n" << B << std::endl;
-}
-
-void rk4::DifferentialEquation(const Eigen::Vector3d &F,
-							   const Eigen::VectorXd &state0,
-	                           Eigen::VectorXd *state_dot) {
-	Eigen::VectorXd x_dot = A_*state0 + B_*F;
-	Eigen::Vector3d vel(x_dot[0], x_dot[1], x_dot[2]);
-	Eigen::Vector3d acc(x_dot[3], x_dot[4], x_dot[5]);
-
-	// Cap acceleration to maximum value
-	if(acc.norm() > max_acc_) {
-		acc = max_acc_*acc.normalized();
-		x_dot[3] = acc[0];
-		x_dot[4] = acc[1];
-		x_dot[5] = acc[2];
-	}
-
-	// If velocity is above norm, we only allow accelerations that
-	// will reduce the velocity (or rotate it)
-	if(vel.norm() >= max_vel_) {
-		// Project acceleration into velocity
-		const double projection = acc.dot(vel);
-
-		// If projection is positive, we only allow acc to rotate velocity
-		if(projection > 0) {
-			acc = acc - projection*acc;  // Remove the component along vel
-			x_dot[3] = acc[0];
-			x_dot[4] = acc[1];
-			x_dot[5] = acc[2];
-		}
-	}
-
-	*state_dot = x_dot;
-}
-
-void rk4::UpdateStates(const Eigen::Vector3d &F,
-	                   const double &dt) {
-	const double dt_half = dt/2.0;
-	Eigen::VectorXd k1(6), k2(6), k3(6), k4(6);
-
-	this->DifferentialEquation(F, state_, &k1);
-	this->DifferentialEquation(F, state_ + dt_half*k1, &k2);
-	this->DifferentialEquation(F, state_ + dt_half*k2, &k3);
-	this->DifferentialEquation(F, state_ + dt*k3, &k4);
-
-	Eigen::VectorXd deltaX = dt*(k1 + 2.0*k2 + 2.0*k3 + k4)/6.0;
-	state_ = state_ + deltaX;
-	accel_ = Eigen::Vector3d(k1[3], k1[4], k1[5]);
-}
-
-void rk4::ResetStates() {
-	state_ = Eigen::MatrixXd::Zero(x_dim_, 1);
-	accel_ = Eigen::Vector3d::Zero();
-}
-
-void rk4::GetPos(Eigen::Vector3d *pos) {
-	*pos = Eigen::Vector3d(state_[0], state_[1], state_[2]);
-}
-
-void rk4::GetPos(geometry_msgs::Point *pos) {
-	Eigen::Vector3d eigen_pos;
-	this->GetPos(&eigen_pos);
-	pos->x = eigen_pos[0];
-	pos->y = eigen_pos[1];
-	pos->z = eigen_pos[2];
-}
-
-void rk4::GetVel(Eigen::Vector3d *vel) {
-	*vel = Eigen::Vector3d(state_[3], state_[4], state_[5]);
-}
-
-void rk4::GetVel(geometry_msgs::Vector3 *vel) {
-	Eigen::Vector3d eigen_vel;
-	this->GetVel(&eigen_vel);
-	vel->x = eigen_vel[0];
-	vel->y = eigen_vel[1];
-	vel->z = eigen_vel[2];
-}
-
-void rk4::GetAcc(Eigen::Vector3d *acc) {
-	*acc = accel_;
-}
-
-void rk4::GetAcc(geometry_msgs::Vector3 *acc) {
-	Eigen::Vector3d eigen_acc;
-	this->GetAcc(&eigen_acc);
-	acc->x = eigen_acc[0];
-	acc->y = eigen_acc[1];
-	acc->z = eigen_acc[2];
-}
-
 
 // Mediation layer class ------------------------------------------
 MediationLayer::MediationLayer() {
@@ -192,7 +77,7 @@ void MediationLayer::UpdateQuadReference(const std::string &name,
 		if(!it->is_active) {
 			it->ml_reference = reference;
 			if(!it->is_active) {
-				it->error_integrator.ResetStates();
+				it->error_integrator.ResetStates(reference);
 			}
 			it->is_active = true;
 		}
@@ -298,30 +183,35 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 	std::set<QuadData>::iterator it;
 	for(it = quads_.begin(); it != quads_.end(); ++it) {
 
-			// Update the error dynamics
-			it->error_integrator.UpdateStates(it->force_field, dt);
-
-			// Get errors from the error_integrator
-			geometry_msgs::Point error;
-			geometry_msgs::Vector3 error_dot, error_ddot;
-			it->error_integrator.GetPos(&error);
-			it->error_integrator.GetVel(&error_dot);
-			it->error_integrator.GetAcc(&error_ddot);
-
-			// Populate structure for new reference data
-			px4_control::PVA ml_reference;
-			
-			ml_reference.Pos = 
-				helper::SubtractPoint(it->reference.Pos, error);
-			ml_reference.Vel = 
-				helper::SubtractVector3(it->reference.Vel, error_dot);
-			ml_reference.Acc = 
-				helper::SubtractVector3(it->reference.Acc, error_ddot);
-			ml_reference.yaw = it->reference.yaw;
-
-			// Set new reference data
-			it->ml_reference = ml_reference;
+		if(!it->is_active) {
+			continue;
 		}
+
+		// Update the error dynamics
+		it->error_integrator.UpdateStates(it->force_field, 
+			                              it->reference, dt);
+
+		// Get errors from the error_integrator
+		geometry_msgs::Point error;
+		geometry_msgs::Vector3 error_dot, error_ddot;
+		it->error_integrator.GetPos(&error);
+		it->error_integrator.GetVel(&error_dot);
+		it->error_integrator.GetAcc(&error_ddot);
+
+		// Populate structure for new reference data
+		px4_control::PVA ml_reference;
+		
+		ml_reference.Pos = error;
+			// helper::SubtractPoint(it->reference.Pos, error);
+		ml_reference.Vel = error_dot;
+			// helper::SubtractVector3(it->reference.Vel, error_dot);
+		ml_reference.Acc = error_ddot;
+			// helper::SubtractVector3(it->reference.Acc, error_ddot);
+		ml_reference.yaw = it->reference.yaw;
+
+		// Set new reference data
+		it->ml_reference = ml_reference;
+	}
 }
 
 void MediationLayer::PublishMLReferences() {

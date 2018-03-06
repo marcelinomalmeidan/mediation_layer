@@ -35,6 +35,9 @@ include_directories(
 add_executable(mediation_layer 
                src/mediationLayer.cpp
                src/ml_class.cpp
+               src/rk4.cpp
                src/helper.cpp
-               src/visualization_functions.cpp)
+               src/visualization_functions.cpp
+               src/threads.cpp
+               src/callbacks.cpp)
 target_link_libraries(mediation_layer ${catkin_LIBRARIES})

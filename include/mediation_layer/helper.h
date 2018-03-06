@@ -1,3 +1,6 @@
+#ifndef HELPER_H_
+#define HELPER_H_
+
 #include "ros/ros.h"
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Point.h"
@@ -99,3 +102,5 @@ double deg2rad(double degVal);
 double rad2deg(double radVal);
 
 }  // namespace helper
+
+#endif  // HELPER_H_
