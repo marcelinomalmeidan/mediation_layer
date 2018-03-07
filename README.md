@@ -7,6 +7,27 @@ The Mediation Layer package is based on potential fields, repelling vehicles tha
 vehicles from the boundary walls. When no repulsion forces are acting on a quadcopter, the Mediation Layer's output converges to the 
 desired reference. This package can be summarized in the following image:
 
+![alt text](https://github.com/marcelinomalmeidan/mediation_layer.git/master/path/to/img.png)
 
-In the image above, y_{ref} is a desired reference
-![equation](<a href="http://www.codecogs.com/eqnedit.php?latex=\ddot{\bm{y}}_{ref}^*&space;=&space;k_p(\bm{y}_{ref}&space;-&space;\bm{y}_{ref}^*)&space;&plus;&space;k_d(\dot{\bm{y}}_{ref}&space;-&space;\dot{\bm{y}}_{ref}^*)&space;&plus;&space;\ddot{\bm{y}}_{ref}&space;&plus;&space;\bm{F}_{field}(\bm{X})" target="_blank"><img src="http://latex.codecogs.com/gif.latex?\ddot{\bm{y}}_{ref}^*&space;=&space;k_p(\bm{y}_{ref}&space;-&space;\bm{y}_{ref}^*)&space;&plus;&space;k_d(\dot{\bm{y}}_{ref}&space;-&space;\dot{\bm{y}}_{ref}^*)&space;&plus;&space;\ddot{\bm{y}}_{ref}&space;&plus;&space;\bm{F}_{field}(\bm{X})" title="\ddot{\bm{y}}_{ref}^* = k_p(\bm{y}_{ref} - \bm{y}_{ref}^*) + k_d(\dot{\bm{y}}_{ref} - \dot{\bm{y}}_{ref}^*) + \ddot{\bm{y}}_{ref} + \bm{F}_{field}(\bm{X})" /></a>)
+In the image above, y_{ref} is a desired reference, and y*_{ref} is the reference modified by the Mediation Layer. Note that the mediation layer uses the current state of the system X (position of the quadcopters) to compute y*_{ref}.
+
+## Dependencies
+
+- This software was developed for ROS Kinetic in Ubuntu 16.04. We haven't tested for other distributions. See installation procedure in http://wiki.ros.org/kinetic/Installation/Ubuntu.
+
+- Eigen
+
+```sudo apt-get install libeigen3-dev ```
+
+- MAVROS
+
+``` sudo apt-get install ros-kinetic-mavros ros-kinetic-mavros-extras```
+
+- It also depends on the px4_control package, which is the package we use to perform position control with any px4-based quadcopter. The mediation_layer package uses a message definition that is defined in px4_control.
+
+```
+cd ~/catkin_ws/src
+git clone https://github.com/radionavlab/px4_control.git
+cd ..
+catkin_make
+```
