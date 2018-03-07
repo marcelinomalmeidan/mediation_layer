@@ -27,6 +27,7 @@ When running, the mediatio_layer will be subscribing to two types of topics:
 
 - Current state of the quadcopters
 
+
 ## Dependencies
 
 - This software was developed for ROS Kinetic in Ubuntu 16.04. We haven't tested for other distributions. See installation procedure in http://wiki.ros.org/kinetic/Installation/Ubuntu.
@@ -48,6 +49,7 @@ cd ..
 catkin_make
 ```
 
+
 ## Compiling
 
 - Copy the present REPO into a catkin workspace, e.g.:
@@ -57,12 +59,15 @@ cd ~/catkin_ws/src
 git clone https://github.com/marcelinomalmeidan/px4_control.git
 ```
 
+
 - Compile the catkin workspace, e.g.:
 
 ```
 cd ~/catkin_ws
 catkin_make
-```## Compiling
+```
+
+## Compiling
 
 - Copy the present REPO into a catkin workspace, e.g.:
 
