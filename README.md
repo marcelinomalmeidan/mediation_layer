@@ -11,6 +11,22 @@ desired reference. This package can be summarized in the following image:
 
 In the image above, y_{ref} is a desired reference, and y*_{ref} is the reference modified by the Mediation Layer. Note that the mediation layer uses the current state of the system X (position of the quadcopters) to compute y*_{ref}.
 
+## Launch file parameters
+
+This package is commonly executed using parameters from a .launch file. The launch file sets parameters such as:
+
+- Quadcopter names: this is crucial for the mediation_layer to know which topics to listen to and to publish into. 
+
+- TODO
+
+## Inputs and Outputs
+
+When running, the mediatio_layer will be subscribing to two types of topics:
+
+- Desired references for the quadcopters
+
+- Current state of the quadcopters
+
 ## Dependencies
 
 - This software was developed for ROS Kinetic in Ubuntu 16.04. We haven't tested for other distributions. See installation procedure in http://wiki.ros.org/kinetic/Installation/Ubuntu.
@@ -31,3 +47,34 @@ git clone https://github.com/radionavlab/px4_control.git
 cd ..
 catkin_make
 ```
+
+## Compiling
+
+- Copy the present REPO into a catkin workspace, e.g.:
+
+```
+cd ~/catkin_ws/src
+git clone https://github.com/marcelinomalmeidan/px4_control.git
+```
+
+- Compile the catkin workspace, e.g.:
+
+```
+cd ~/catkin_ws
+catkin_make
+```## Compiling
+
+- Copy the present REPO into a catkin workspace, e.g.:
+
+```
+cd ~/catkin_ws/src
+git clone https://github.com/marcelinomalmeidan/mediation_layer.git
+```
+
+- Compile the catkin workspace, e.g.:
+
+```
+cd ~/catkin_ws
+catkin_make
+```
+
