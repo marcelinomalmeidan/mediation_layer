@@ -7,7 +7,8 @@
 
     <rosparam param="QuadList"> ["phoenix", "valkyrie", "hippogryph", "harry", "hermione", "ron"] </rosparam>
 
-
   </node>
+
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find mediation_layer)/rviz_cfg/ML_rviz_config.rviz"/>
 </launch>
 
