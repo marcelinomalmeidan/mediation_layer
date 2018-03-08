@@ -8,6 +8,9 @@ namespace threads {
 // Thread that runs the mediation layer algorithm
 void MediationLayerThread();
 
+// Thread for verifying heartbeat of quad references and position
+void HeartbeatThread();
+
 // Thread for publishing static objects. These are republished with
 // low frequency just in case RVIZ is restarted
 void StaticObjectsVisualizationThread();

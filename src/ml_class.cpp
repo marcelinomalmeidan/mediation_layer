@@ -20,7 +20,7 @@ MediationLayer::MediationLayer(const std::string &visualization_topic,
 void MediationLayer::PrintQuadNames() {
 	std::set<QuadData>::iterator it;
 	for(it = quads_.begin(); it != quads_.end(); ++it) {
-		std::cout << it->name << ";" << std::endl;
+		std::cout << it->name << std::endl;
 	}
 	std::cout << std::endl;
 }
@@ -31,7 +31,7 @@ void MediationLayer::PrintQuadReferences(const std::string &name) {
 		ROS_INFO("Quad %s references: %f\t%f\t%f", name.c_str(), 
 			     it->reference.Pos.x, it->reference.Pos.y, it->reference.Pos.z);
 	} else {
-		ROS_INFO("Couldn't print reference: quad name not found");
+		ROS_INFO("[mediation layer] Couldn't print reference: quad name not found");
 	}
 }
 
@@ -43,16 +43,19 @@ void MediationLayer::AddQuad(const std::string &quad_name,
 
 	// Check whether quad name already exists
 	if(quads_.find(new_quad) != quads_.end()) {
-		ROS_WARN("Tried to add quad ""%s"": already exists!", quad_name.c_str());
+		ROS_WARN("[mediation layer] Tried to add quad ""%s"": already exists!", quad_name.c_str());
 	} else {
-		px4_control::PVA emptyPVA = helper::GetEmptyPVA();
+		mg_msgs::PVA emptyPVA = helper::GetEmptyPVA();
 		new_quad.reference = emptyPVA;
 		new_quad.ml_reference = emptyPVA;
+		new_quad.vehicle_odom = helper::GetZeroOdom();
 		new_quad.force_field = Eigen::Vector3d(0.0, 0.0, 0.0);
-		new_quad.is_active = false;
+		new_quad.ref_is_active = false;
+		new_quad.odom_is_active = false;
+		new_quad.last_reference_stamp = ros::Time::now();
 		new_quad.error_integrator = rk4(4.0, 3.0, max_vel_, max_acc_);
 		new_quad.nh = *nh;
-		new_quad.pub_mediation_layer = new_quad.nh.advertise<px4_control::PVA>(output_topic, 1);
+		new_quad.pub_mediation_layer = new_quad.nh.advertise<mg_msgs::PVA>(output_topic, 1);
 		visualization_functions::SelectColor(n_quads_, &new_quad.color);
 		quads_.insert(new_quad);
 		n_quads_ = n_quads_ + 1;
@@ -67,23 +70,54 @@ void MediationLayer::FindQuadIndex(const std::string &name,
 }
 
 void MediationLayer::UpdateQuadReference(const std::string &name, 
-             			 				 const px4_control::PVA &reference) {
+             			 				 const mg_msgs::PVA &reference) {
 	std::set<QuadData>::iterator it;
 	this->FindQuadIndex(name, &it);
 	if (it != quads_.end()) {
 		it->reference = reference;
+		it->last_reference_stamp = ros::Time::now();
 		
-		// If it was inactive, reset the ml_reference
-		if(!it->is_active) {
-			it->ml_reference = reference;
-			if(!it->is_active) {
+		// If it is inactive, set it to active
+		if(!it->ref_is_active) {
+			it->ref_is_active = true;
+			if(!it->odom_is_active) {
 				it->error_integrator.ResetStates(reference);
 			}
-			it->is_active = true;
 		}
 	} else {
-		ROS_INFO("Couldn't update reference: quad %s not found", name.c_str());
+		ROS_INFO("[mediation layer] Couldn't update reference: quad %s not found", name.c_str());
 	}
+}
+
+void MediationLayer::UpdateQuadOdom(const std::string &name, 
+                                    const nav_msgs::Odometry &odom) {
+	std::set<QuadData>::iterator it;
+	this->FindQuadIndex(name, &it);
+	if (it != quads_.end()) {
+		it->vehicle_odom = odom;
+		it->last_measurement_stamp = ros::Time::now();
+
+		// If odom is inactive, activate it
+		if(!it->odom_is_active) {
+			it->odom_is_active = true;
+		}
+
+		// If references are inactive, reset the ml_reference to the current position
+		if(!it->ref_is_active) {
+			it->error_integrator.ResetStates(odom);
+		}
+	} else {
+		ROS_INFO("[mediation layer] Couldn't update reference: quad %s not found", name.c_str());
+	}
+}
+
+void MediationLayer::ResetForces() {
+    // Initialize relative forces to zero
+    std::set<QuadData>::iterator it;
+    for(it = quads_.begin(); it != quads_.end(); ++it) {
+    	it->force_field = Eigen::Vector3d(0.0, 0.0, 0.0);
+    }
+
 }
 
 void MediationLayer::UpdateVehicleReactionForces() {
@@ -91,16 +125,12 @@ void MediationLayer::UpdateVehicleReactionForces() {
 	static double k_force = 3;
     static double f_max = 1000.0;
     const Eigen::Vector3d z_axis(0.0, 0.0, 1.0);
+    const double epsilon = 0.001;
 
-     // Initialize relative forces to zero
     std::set<QuadData>::iterator it1, it2;
-    for(it1 = quads_.begin(); it1 != quads_.end(); ++it1) {
-    	it1->force_field = Eigen::Vector3d(0.0, 0.0, 0.0);
-    }
-
 	for(it1 = quads_.begin(); it1 != quads_.end(); ++it1) {
 		
-		if(!it1->is_active) {
+		if(!it1->odom_is_active) {
 			continue;
 		}
 
@@ -108,10 +138,9 @@ void MediationLayer::UpdateVehicleReactionForces() {
 		for(it2 = quads_.begin(); it2 != quads_.end(); ++it2) {
 			if (it1 == it2) {
 				continue;
-				// ROS_INFO("same");
 			}
 
-			if(!it2->is_active) {
+			if(!it2->odom_is_active) {
 				continue;
 			}
 
@@ -120,7 +149,14 @@ void MediationLayer::UpdateVehicleReactionForces() {
 					helper::Point2vec3d(it1->ml_reference.Pos) - 
 					helper::Point2vec3d(it2->ml_reference.Pos);
 			double norm_dist = dist_vec.norm();
-			Eigen::Vector3d dist_direction = dist_vec.normalized();
+
+			Eigen::Vector3d dist_direction;
+			if(norm_dist > epsilon){
+				dist_direction = dist_vec.normalized();
+			} else {
+				dist_direction = Eigen::Vector3d(0.0, 0.0, 0.0);
+			}
+
 			//Get reacting forces
 			if (norm_dist < d_thresh_) {
 				double force_magnitude;
@@ -151,7 +187,7 @@ void MediationLayer::UpdateArenaReactionForces() {
     std::set<QuadData>::iterator it;
 	for(it = quads_.begin(); it != quads_.end(); ++it) {
 		
-		if(!it->is_active) {
+		if(!it->odom_is_active) {
 			continue;
 		}
 
@@ -165,6 +201,7 @@ void MediationLayer::UpdateArenaReactionForces() {
 		// Calculate reaction forces between quad and planes
 		for (uint i = 0; i < dist.size(); i++) {
 			const double norm_dist = dist[i];
+			// std::cout << "quad dist " << i << ": " << norm_dist << std::endl;
 			if (norm_dist < d_thresh_) {
 				double force_magnitude;
 				if (norm_dist <= d_min_) {  // Avoid calculating negative forces
@@ -174,6 +211,9 @@ void MediationLayer::UpdateArenaReactionForces() {
 				}
 				force_magnitude = std::min(f_max, force_magnitude);
 				it->force_field = it->force_field + force_magnitude*normal[i];
+				// std::cout << force_magnitude*normal[i][0] << " "
+				// 		  << force_magnitude*normal[i][1] << " "
+				// 		  << force_magnitude*normal[i][2] << std::endl;
 			}
 		}
 	}
@@ -183,7 +223,7 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 	std::set<QuadData>::iterator it;
 	for(it = quads_.begin(); it != quads_.end(); ++it) {
 
-		if(!it->is_active) {
+		if(!it->ref_is_active) {
 			continue;
 		}
 
@@ -192,20 +232,20 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 			                              it->reference, dt);
 
 		// Get errors from the error_integrator
-		geometry_msgs::Point error;
-		geometry_msgs::Vector3 error_dot, error_ddot;
-		it->error_integrator.GetPos(&error);
-		it->error_integrator.GetVel(&error_dot);
-		it->error_integrator.GetAcc(&error_ddot);
+		geometry_msgs::Point pos;
+		geometry_msgs::Vector3 pos_dot, pos_ddot;
+		it->error_integrator.GetPos(&pos);
+		it->error_integrator.GetVel(&pos_dot);
+		it->error_integrator.GetAcc(&pos_ddot);
 
 		// Populate structure for new reference data
-		px4_control::PVA ml_reference;
+		mg_msgs::PVA ml_reference;
 		
-		ml_reference.Pos = error;
+		ml_reference.Pos = pos;
 			// helper::SubtractPoint(it->reference.Pos, error);
-		ml_reference.Vel = error_dot;
+		ml_reference.Vel = pos_dot;
 			// helper::SubtractVector3(it->reference.Vel, error_dot);
-		ml_reference.Acc = error_ddot;
+		ml_reference.Acc = pos_ddot;
 			// helper::SubtractVector3(it->reference.Acc, error_ddot);
 		ml_reference.yaw = it->reference.yaw;
 
@@ -217,8 +257,9 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 void MediationLayer::PublishMLReferences() {
 	std::set<QuadData>::iterator it;
 	for(it = quads_.begin(); it != quads_.end(); ++it) {
-		// ROS_INFO("Publishing references for quad %s", it->name.c_str());
-		it->pub_mediation_layer.publish(it->ml_reference);
+		if(it->ref_is_active) {
+			it->pub_mediation_layer.publish(it->ml_reference);	
+		}
 	}
 }
 

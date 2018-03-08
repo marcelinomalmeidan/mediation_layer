@@ -9,7 +9,9 @@
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "px4_control/PVA.h"
+#include "nav_msgs/Odometry.h"
+#include "mg_msgs/PVA.h"
+#include "mediation_layer/helper.h"
 
 class rk4 {  // Runge-kutta for time-invariant systems
  public:
@@ -27,15 +29,16 @@ class rk4 {  // Runge-kutta for time-invariant systems
   //                             Eigen::VectorXd *state_dot);
 	void DifferentialEquation(const Eigen::Vector3d &F,
 						      const Eigen::VectorXd &state0,
-		  				      const px4_control::PVA &Ref,
+		  				      const mg_msgs::PVA &Ref,
 	                          Eigen::VectorXd *state_dot);
  	// void UpdateStates(const Eigen::Vector3d &F,
   //                     const double &dt);
  	void UpdateStates(const Eigen::Vector3d &F,
- 					  const px4_control::PVA &Ref,
+ 					  const mg_msgs::PVA &Ref,
                   	  const double &dt);
     // void ResetStates();
-    void ResetStates(const px4_control::PVA &Ref);
+    void ResetStates(const mg_msgs::PVA &Ref);
+    void ResetStates(const nav_msgs::Odometry &odom);
     void GetPos(Eigen::Vector3d *pos);
     void GetPos(geometry_msgs::Point *pos);
     void GetVel(Eigen::Vector3d *vel);

@@ -56,6 +56,7 @@ void MeshMarker(const Eigen::Vector3d &point,
 	            const std::string &ns,  // namespace
 	            const double &size,
                 const std_msgs::ColorRGBA &color,
+                const double &transparency,  // 0 -> transparent, 1 -> opaque
 	            const int &seqNumber,
 	            visualization_msgs::MarkerArray *markerArray) {
 	visualization_msgs::Marker marker;
@@ -63,7 +64,7 @@ void MeshMarker(const Eigen::Vector3d &point,
 	marker.mesh_resource = "package://mediation_layer/meshes/quadrotor_base.dae";
 	marker.action = visualization_msgs::Marker::ADD;
 	marker.color = color;
-	marker.color.a = 1.0;
+	marker.color.a = transparency;
 	marker.scale.x = size;
 	marker.scale.y = size;
 	marker.scale.z = size;

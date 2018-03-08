@@ -82,7 +82,7 @@ rk4::rk4(const double &k, const double &kd,
 
 void rk4::DifferentialEquation(const Eigen::Vector3d &F,
 							   const Eigen::VectorXd &state0,
-							   const px4_control::PVA &Ref,
+							   const mg_msgs::PVA &Ref,
 	                           Eigen::VectorXd *state_dot) {
 	// Get references
 	Eigen::Vector3d yd, yd_dot, yd_ddot;
@@ -97,6 +97,16 @@ void rk4::DifferentialEquation(const Eigen::Vector3d &F,
 	e = yd - y;
 	e_dot = yd_dot - y_dot;
 	y_ddot = yd_ddot + K_*e + Kd_*e_dot + F;
+
+	// helper::printVector3d("y", y);
+	// helper::printVector3d("yd", yd);
+	// helper::printVector3d("e", e);
+	// helper::printVector3d("y_dot", y_dot);
+	// helper::printVector3d("yd_dot", yd_dot);
+	// helper::printVector3d("e_dot", e_dot);
+	// helper::printVector3d("F", F);
+	// helper::printVector3d("y_ddot", y_ddot);
+	// helper::printVector3d("yd_ddot", yd_ddot);
 
 	// Cap acceleration to maximum value
 	if(y_ddot.norm() > max_acc_) {
@@ -122,7 +132,7 @@ void rk4::DifferentialEquation(const Eigen::Vector3d &F,
 }
 
 void rk4::UpdateStates(const Eigen::Vector3d &F,
-					   const px4_control::PVA &Ref,
+					   const mg_msgs::PVA &Ref,
 	          	       const double &dt) {
 	const double dt_half = dt/2.0;
 	Eigen::VectorXd k1(6), k2(6), k3(6), k4(6);
@@ -140,6 +150,15 @@ void rk4::UpdateStates(const Eigen::Vector3d &F,
 	y_ << state[0], state[1], state[2];
 	y_dot_ << state[3], state[4], state[5];
 	y_ddot_ = Eigen::Vector3d(k1[3], k1[4], k1[5]);
+
+	// Euler integration (instead of rung kutta)
+	// double k = 4.0; double kd = 3.0;
+	// Eigen::Vector3d yd, yd_dot, yd_ddot;
+	// yd << Ref.Pos.x, Ref.Pos.y, Ref.Pos.z;
+	// yd_dot << Ref.Vel.x, Ref.Vel.y, Ref.Vel.z;
+	// yd_ddot << Ref.Acc.x, Ref.Acc.y, Ref.Acc.z;
+	// y_ = y_ + dt*y_dot_;
+	// y_dot_ << y_dot_ + dt*(yd_ddot - k*(y_-yd) - kd*(y_dot_-yd_dot));
 }
 
 // void rk4::ResetStates() {
@@ -147,10 +166,18 @@ void rk4::UpdateStates(const Eigen::Vector3d &F,
 // 	accel_ = Eigen::Vector3d::Zero();
 // }
 
-void rk4::ResetStates(const px4_control::PVA &Ref) {
+void rk4::ResetStates(const mg_msgs::PVA &Ref) {
 	y_ << Ref.Pos.x, Ref.Pos.y, Ref.Pos.z;
 	y_dot_ << Ref.Vel.x, Ref.Vel.y, Ref.Vel.z;
 	y_ddot_ << 0.0, 0.0, 0.0;
+}
+
+void rk4::ResetStates(const nav_msgs::Odometry &odom) {
+	y_ << odom.pose.pose.position.x,
+	      odom.pose.pose.position.y,
+	      odom.pose.pose.position.z;
+	y_dot_ << 0.0, 0.0, 0.0;
+	y_ddot_ << 0.0, 0.0, 0.0;	
 }
 
 void rk4::GetPos(Eigen::Vector3d *pos) {

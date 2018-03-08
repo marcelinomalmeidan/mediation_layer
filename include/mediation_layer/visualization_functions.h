@@ -3,6 +3,7 @@
 
 #include <visualization_msgs/MarkerArray.h>
 #include <Eigen/Dense>
+#include <Eigen/Geometry> 
 #include "mediation_layer/helper.h"
 
 
@@ -54,6 +55,7 @@ void MeshMarker(const Eigen::Vector3d &point,
                 const std::string &ns,  // namespace
                 const double &size,
                 const std_msgs::ColorRGBA &color,
+                const double &transparency,  // 0 -> transparent, 1 -> opaque
                 const int &seqNumber,
                 visualization_msgs::MarkerArray *markerArray);
 

@@ -5,8 +5,11 @@
 
 namespace callbacks {
 
-void PVACallback(const px4_control::PVA::ConstPtr& msg,
+void PVACallback(const mg_msgs::PVA::ConstPtr& msg,
                  const std::string& quad_name);
+
+void OdomCallback(const nav_msgs::Odometry::ConstPtr& msg,
+                  const std::string& quad_name);
 
 }  // namespace callbacks
 

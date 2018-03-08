@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   cmake_modules
-  px4_control
+  mg_msgs
 )
 
 find_package(Eigen REQUIRED)
@@ -41,3 +41,5 @@ add_executable(mediation_layer
                src/threads.cpp
                src/callbacks.cpp)
 target_link_libraries(mediation_layer ${catkin_LIBRARIES})
+add_dependencies(mediation_layer ${catkin_EXPORTED_TARGETS})
+add_dependencies(mediation_layer mg_msgs_generate_messages_cpp)

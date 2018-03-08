@@ -5,7 +5,8 @@
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Quaternion.h"
-#include "px4_control/PVA.h"
+#include "nav_msgs/Odometry.h"
+#include "mg_msgs/PVA.h"
 #include <math.h>
 #include <Eigen/Dense>
 
@@ -66,11 +67,18 @@ geometry_msgs::Point Vec3d2point(Eigen::Vector3d Pt);
 //Function to copy a ROS Vector3 into an Eigen Vector3d structure
 Eigen::Vector3d Vec32vec3d(geometry_msgs::Vector3 Pt);
 
+//Function to print the values of an Eigen Vector3d
+void printVector3d(const std::string &string,
+	               const Eigen::Vector3d &Pt);
+
 //Function to generate a skew-symmetric matrix from a vector (based on kinematics)
 Eigen::Matrix3d skew(float x, float y, float z);
 
-// Get an zero version of the PVA message type
-px4_control::PVA GetEmptyPVA();
+// Get a zero version of the PVA message type
+mg_msgs::PVA GetEmptyPVA();
+
+// Get a zero version of the odometry message type
+nav_msgs::Odometry GetZeroOdom();
 
 // Return a rotation matrix with v1 aligned with z, and v2 projected into x
 Eigen::Matrix3d Triad(Eigen::Vector3d v1, Eigen::Vector3d v2);

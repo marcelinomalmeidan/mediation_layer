@@ -13,8 +13,8 @@
 
 // ROS message types
 #include "geometry_msgs/PoseStamped.h"
-#include "px4_control/PVA.h"
-
+#include "nav_msgs/Odometry.h"
+#include "mg_msgs/PVA.h"
 
 
 // Declare global variables

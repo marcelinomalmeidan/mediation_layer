@@ -4,7 +4,7 @@
 namespace threads {
 
 void MediationLayerThread() {
-    ROS_DEBUG("Mediation Layer Thread started!");
+    ROS_DEBUG("[mediation layer] Mediation Layer Thread started!");
 
     // Rate at which this thread will run
     double rate = 300.0;  // Rate in Hz
@@ -19,6 +19,9 @@ void MediationLayerThread() {
         const ros::Time t0 = ros::Time::now();
 
         pthread_mutex_lock(&mutexes_.m_ml_class);
+
+            // Reset reaction forces
+            globals_.obj_mid_layer.ResetForces();
 
             // Update reaction forces between vehicles
             globals_.obj_mid_layer.UpdateVehicleReactionForces();
@@ -42,8 +45,45 @@ void MediationLayerThread() {
     ROS_DEBUG("Exiting Mediation Layer Thread...");
 }
 
+void HeartbeatThread() {
+    ROS_DEBUG("[mediation layer] Heartbeat Thread started!");
+
+    const double rate = 5.0;  // Rate in Hz
+    ros::Rate loop_rate(rate);
+
+    // Timeout for heartbeats
+    const double timeout = 2.0;
+
+    while (ros::ok()) {
+        pthread_mutex_lock(&mutexes_.m_ml_class);
+
+        ros::Time time_now = ros::Time::now();
+        
+        std::set<QuadData>::iterator it;
+        for(it = globals_.obj_mid_layer.quads_.begin(); 
+            it != globals_.obj_mid_layer.quads_.end(); ++it) {
+
+            ros::Time last_ref = it->last_reference_stamp;
+            if (it->ref_is_active && (time_now - last_ref).toSec() > timeout) {
+                it->ref_is_active = false;
+                ROS_WARN("[mediation layer] Quad %s references inactive!", it->name.c_str());
+            }
+
+            ros::Time last_meas = it->last_measurement_stamp;
+            if (it->odom_is_active && (time_now - last_meas).toSec() > timeout) {
+                it->odom_is_active = false;
+                ROS_WARN("[mediation layer] Quad %s odometry inactive!", it->name.c_str());
+            }
+        }
+
+        pthread_mutex_unlock(&mutexes_.m_ml_class);
+
+        loop_rate.sleep();
+    }
+}
+
 void StaticObjectsVisualizationThread() {
-	ROS_DEBUG("Static Objects Visualization Thread started!");
+	ROS_DEBUG("[mediation layer] Static Objects Visualization Thread started!");
 
 	const std::string frame_id = "world";
 	const std::string ground_ns = "ground";
@@ -84,10 +124,10 @@ void StaticObjectsVisualizationThread() {
 }
 
 void VisualizationThread() {
-	ROS_DEBUG("Visualization Thread started!");
+	ROS_DEBUG("[mediation layer] Visualization Thread started!");
 
     // Rate at which this thread will run
-    const double rate = 50.0;  // Rate in Hz
+    const double rate = 30.0;  // Rate in Hz
     const double dt = 1/rate;
     const double mass = 0.75;
     const double gz = 9.81;
@@ -102,6 +142,7 @@ void VisualizationThread() {
     const std_msgs::ColorRGBA text_color = visualization_functions::Color::Black();
     const std_msgs::ColorRGBA force_color = visualization_functions::Color::Red();
     const double reference_transparency = 0.5;
+    const double pos_transparency = 1.0;
     const double reference_size = 0.1;
     visualization_msgs::MarkerArray quadArray;
 
@@ -126,45 +167,74 @@ void VisualizationThread() {
         for(it = local_obj_mid_layer.quads_.begin(); 
         	it != local_obj_mid_layer.quads_.end(); ++it) {
 
-        	if(!it->is_active) {
-        		continue;
+        	if(it->ref_is_active) {
+        		// Get some parameters for visualization
+                const Eigen::Vector3d Acc2 = helper::Vec32vec3d(it->ml_reference.Acc) + 
+                                             Eigen::Vector3d(0.0, 0.0, weight);
+                const Eigen::Matrix3d orientationFrame = helper::Triad(Acc2, it->ml_reference.yaw);
+                const Eigen::Quaterniond orientationMesh = helper::TriadQuat(Acc2, it->ml_reference.yaw + M_PI/4.0);
+                const Eigen::Vector3d ml_ref_pos = helper::Point2vec3d(it->ml_reference.Pos);
+
+                // // Get marker for sphere of influence for each quad
+                // visualization_functions::SphereMarker(ml_ref_pos,
+                //             frame_id, it->name, sphere_size, sphere_color, 
+                //             sphere_transparency, 0, &quadArray);
+
+                // Get marker for reference position of each quad
+                Eigen::Vector3d reference = helper::Point2vec3d(it->reference.Pos);
+                visualization_functions::SphereMarker(reference,
+                            frame_id, it->name, reference_size, it->color, 
+                            reference_transparency, 1, &quadArray);
+
+                // Get quad mesh
+                visualization_functions::MeshMarker(ml_ref_pos, orientationMesh,
+                            frame_id, it->name, quad_size, it->color, 
+                            reference_transparency, 2, &quadArray);
+
+                visualization_functions::NameMarker(ml_ref_pos, it->name,
+                            frame_id, it->name, text_color, 4, &quadArray);
+
+                // // Get triad frame arrows
+                // const double arrowLength = 0.2; 
+                // visualization_functions::FrameMarker(ml_ref_pos, orientationFrame,
+                //             frame_id, it->name, frame_color, 5, arrowLength, &quadArray);
         	}
 
-	        // Get some parameters for visualization
-			Eigen::Vector3d Acc2 = helper::Vec32vec3d(it->ml_reference.Acc) + 
-			                      Eigen::Vector3d(0.0, 0.0, weight);
-			Eigen::Matrix3d orientationFrame = helper::Triad(Acc2, it->ml_reference.yaw);
-			Eigen::Quaterniond orientationMesh = helper::TriadQuat(Acc2, it->ml_reference.yaw + M_PI/4.0);
-			Eigen::Vector3d position = helper::Point2vec3d(it->ml_reference.Pos);
+            // Some of the markers below overwrites the ones above
+            if(it->odom_is_active) {
+                // Get some parameters for visualization
+                const geometry_msgs::Quaternion q = it->vehicle_odom.pose.pose.orientation;
+                Eigen::Quaterniond q_mesh(q.w, q.x, q.y, q.z);
+                const Eigen::Matrix3d orientation_frame = q_mesh.normalized().toRotationMatrix();
+                const Eigen::Quaterniond rot_quad(cos(M_PI/8.0), 0.0, 0.0, sin(M_PI/8.0)); // Quad mesh is rotated by 45deg
+                q_mesh = rot_quad*q_mesh;
+                Eigen::Vector3d position = 
+                    helper::Point2vec3d(it->vehicle_odom.pose.pose.position);
+                
+                // Get marker for sphere of influence for each quad
+                visualization_functions::SphereMarker(position,
+                            frame_id, it->name, sphere_size, sphere_color, 
+                            sphere_transparency, 0, &quadArray);
 
-			// Get marker for sphere of influence for each quad
-			visualization_functions::SphereMarker(position,
-	            	    frame_id, it->name, sphere_size, sphere_color, 
-	            	    sphere_transparency, 0, &quadArray);
+                // Get quad mesh
+                visualization_functions::MeshMarker(position, q_mesh,
+                            frame_id, it->name, quad_size, it->color, 
+                            pos_transparency, 12, &quadArray);
 
-			// Get marker for reference position of each quad
-			Eigen::Vector3d reference = helper::Point2vec3d(it->reference.Pos);
-			visualization_functions::SphereMarker(reference,
-	            	    frame_id, it->name, reference_size, it->color, 
-	            	    reference_transparency, 1, &quadArray);
+                // Get force arrow around quad
+                visualization_functions::ForceMarker(position, 
+                            it->force_field, local_obj_mid_layer.max_acc_, 
+                            frame_id, it->name, force_color, 13, &quadArray);
 
-			// Get quad mesh
-			visualization_functions::MeshMarker(position, orientationMesh,
-				        frame_id, it->name, quad_size, it->color, 
-				        2, &quadArray);
+                visualization_functions::NameMarker(position, it->name,
+                            frame_id, it->name, text_color, 4, &quadArray);
 
-			// Get force arrow around quad
-			visualization_functions::ForceMarker(position, 
-						it->force_field, local_obj_mid_layer.max_acc_, 
-						frame_id, it->name, force_color, 3, &quadArray);
+                // Get triad frame arrows
+                const double arrowLength = 0.2; 
+                visualization_functions::FrameMarker(position, orientation_frame,
+                            frame_id, it->name, frame_color, 15, arrowLength, &quadArray);
+            }
 
-			visualization_functions::NameMarker(position, it->name,
-                		frame_id, it->name, text_color, 4, &quadArray);
-
-			// Get triad frame arrows
-			const double arrowLength = 0.5; 
-			visualization_functions::FrameMarker(position, orientationFrame,
-	                    frame_id, it->name, frame_color, 5, arrowLength, &quadArray);
 
     	}
 

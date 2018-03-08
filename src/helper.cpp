@@ -124,6 +124,11 @@ Eigen::Vector3d Vec32vec3d(geometry_msgs::Vector3 Pt) {
 	return Eigen::Vector3d(Pt.x, Pt.y, Pt.z);
 }
 
+void printVector3d(const std::string &string,
+	               const Eigen::Vector3d &Pt) {
+	ROS_INFO("%s:\t%f\t%f\t%f", string.c_str(), Pt[0], Pt[1], Pt[2]);
+}
+
 Eigen::Matrix3d skew(float x, float y, float z){
 	Eigen::Matrix3d M;
 
@@ -134,13 +139,24 @@ Eigen::Matrix3d skew(float x, float y, float z){
 	return M;
 }
 
-px4_control::PVA GetEmptyPVA() {
-	px4_control::PVA newPVA;
+mg_msgs::PVA GetEmptyPVA() {
+	mg_msgs::PVA newPVA;
 	newPVA.Pos = SetPoint(0.0, 0.0, 0.0);
 	newPVA.Vel = SetVector3(0.0, 0.0, 0.0);
 	newPVA.Acc = SetVector3(0.0, 0.0, 0.0);
 	newPVA.yaw = 0;
 	return newPVA;
+}
+
+nav_msgs::Odometry GetZeroOdom() {
+	nav_msgs::Odometry odom;
+	odom.header.stamp = ros::Time::now();
+	odom.header.frame_id = "world";
+	odom.pose.pose.position = SetPoint(0.0, 0.0, 0.0);
+	odom.pose.pose.orientation.w = 1.0;
+	odom.twist.twist.linear = SetVector3(0.0, 0.0, 0.0);
+	odom.twist.twist.angular = SetVector3(0.0, 0.0, 0.0);
+	return odom;
 }
 
 Eigen::Matrix3d Triad(Eigen::Vector3d v1, Eigen::Vector3d v2) {
