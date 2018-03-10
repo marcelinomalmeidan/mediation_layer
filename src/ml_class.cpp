@@ -146,8 +146,8 @@ void MediationLayer::UpdateVehicleReactionForces() {
 
 			// Get distance magnitude and direction
 			Eigen::Vector3d dist_vec = 
-					helper::Point2vec3d(it1->ml_reference.Pos) - 
-					helper::Point2vec3d(it2->ml_reference.Pos);
+					helper::Point2vec3d(it1->vehicle_odom.pose.pose.position) - 
+					helper::Point2vec3d(it2->vehicle_odom.pose.pose.position);
 			double norm_dist = dist_vec.norm();
 
 			Eigen::Vector3d dist_direction;
