@@ -47,6 +47,12 @@ int main(int argc, char** argv){
   	return 0;
   }
 
+  // Get all topic suffixes
+  std::string input_ref_topic, input_odom_topic, output_ref_topic;
+  node.getParam("input_ref_topic", input_ref_topic);
+  node.getParam("input_odom_topic", input_odom_topic);
+  node.getParam("output_ref_topic", output_ref_topic);
+
   // Add quads to mediation layer and create subscribers for them
   std::vector<ros::Subscriber> subsPVA;
   std::string sub_topic_name;
@@ -54,18 +60,18 @@ int main(int argc, char** argv){
   {
   	// Add quad to the mediation layer
   	std::string output_topic, visualization_topic;
-  	output_topic = "/" + quad_names[i] + "/px4_control/PVA_Ref_ML";
+  	output_topic = "/" + quad_names[i] + output_ref_topic;
   	globals_.obj_mid_layer.AddQuad(quad_names[i], quad_colors[i],
   		                           output_topic, &node);
 
   	// Set subscriber to get references to the quad
-    sub_topic_name = "/" + quad_names[i] + "/px4_control/PVA_Ref";
+    sub_topic_name = "/" + quad_names[i] + input_ref_topic;
     ROS_INFO("[mediation layer]: Subscribing to: %s", sub_topic_name.c_str());
     subsPVA.push_back(node.subscribe<mg_msgs::PVA>
     	(sub_topic_name, 10, boost::bind(callbacks::PVACallback, _1, quad_names[i])));
 
     // Set subscriber to get position measurements from the quads
-    sub_topic_name = "/" + quad_names[i] + "/local_odom";
+    sub_topic_name = "/" + quad_names[i] + input_odom_topic;
     ROS_INFO("[mediation layer]: Subscribing to: %s", sub_topic_name.c_str());
     subsPVA.push_back(node.subscribe<nav_msgs::Odometry>
     	(sub_topic_name, 10, boost::bind(callbacks::OdomCallback, _1, quad_names[i])));

@@ -40,6 +40,11 @@
     <rosparam param="mediation_layer_rate"> 300.0 </rosparam> <!-- Integrator -->
     <rosparam param="rviz_update_rate"> 30.0 </rosparam> <!-- Visualization -->
 
+    <!-- Set Input/Output Topics -->
+    <param name="input_ref_topic" value="/px4_control/PVA_Ref"/>
+    <param name="input_odom_topic" value="/local_odom"/>
+    <param name="output_ref_topic" value="/px4_control/PVA_Ref_ML"/>
+
   </node>
 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find mediation_layer)/rviz_cfg/ML_rviz_config.rviz"/>
