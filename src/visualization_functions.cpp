@@ -3,13 +3,13 @@
 namespace visualization_functions {
 
 
-void SelectColor(const uint i, std_msgs::ColorRGBA *color) {
+void SelectColor(const uint &i, std_msgs::ColorRGBA *color) {
 	const uint n_colors = 9;
 	const uint index = i % n_colors;  // Returns a number between 0 and 8
 	switch(index) {
         case 0: *color = Color::Red(); break;
-        case 1: *color = Color::Green(); break;
-        case 2: *color = Color::Blue(); break;
+        case 1: *color = Color::Blue(); break;
+        case 2: *color = Color::Green(); break;
         case 3: *color = Color::Yellow(); break;
         case 4: *color = Color::Orange(); break;
         case 5: *color = Color::Purple(); break;
@@ -17,6 +17,30 @@ void SelectColor(const uint i, std_msgs::ColorRGBA *color) {
         case 7: *color = Color::Teal(); break;
         case 8: *color = Color::Pink(); break;
     }
+}
+
+void SelectColor(const std::string &des_color, std_msgs::ColorRGBA *color) {
+	if(des_color.compare("red") == 0) {
+		*color = Color::Red();
+	} else if(des_color.compare("blue") == 0) {
+		*color = Color::Blue();
+	} else if(des_color.compare("green") == 0) {
+		*color = Color::Green();
+	} else if(des_color.compare("yellow") == 0) {
+		*color = Color::Yellow();
+	} else if(des_color.compare("orange") == 0) {
+		*color = Color::Orange();
+	} else if(des_color.compare("purple") == 0) {
+		*color = Color::Purple();
+	} else if(des_color.compare("chartreuse") == 0) {
+		*color = Color::Chartreuse();
+	} else if(des_color.compare("teal") == 0) {
+		*color = Color::Teal();
+	} else if(des_color.compare("pink") == 0) {
+		*color = Color::Pink();
+	} else {
+		*color = Color::White();
+	} 
 }
 
 void SphereMarker(const Eigen::Vector3d &point,

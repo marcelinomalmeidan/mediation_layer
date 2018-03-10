@@ -36,7 +36,9 @@ class Color : public std_msgs::ColorRGBA {
   static const Color Pink() { return Color(1.0, 0.0, 0.5); }
 };
 
-void SelectColor(const uint i, std_msgs::ColorRGBA *color);
+void SelectColor(const uint &i, std_msgs::ColorRGBA *color);
+
+void SelectColor(const std::string &des_color, std_msgs::ColorRGBA *color);
 
 // Sphere of influence around a quadcopter
 void SphereMarker(const Eigen::Vector3d &point,

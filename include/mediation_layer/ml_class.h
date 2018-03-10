@@ -16,8 +16,6 @@
 #include "mg_msgs/PVA.h"
 
 
-
-
 struct QuadData {
     std::string name;                            // Unique name for vehicle
     mutable mg_msgs::PVA reference;          // Input reference
@@ -49,18 +47,29 @@ class MediationLayer {
     double max_vel_ = 2.5;
     double d_thresh_ = 1.0;   // Distance at which one quad influences another
     double d_min_ = 0.50;     // Minimum distance allowed (infinite repulsion)
+    double k_ = 4.0;          // Proportional gain in the error integrator
+    double kd_ = 3.0;         // Derivative gain in the error integrator
+    double k_force_ = 3.0;     // Repulsion force gain
 
     // Constructors
     MediationLayer();
     MediationLayer(const std::string &visualization_topic,
-                   const Eigen::Vector3d arena_corner1,
-                   const Eigen::Vector3d arena_corner2,
+                   const Eigen::Vector3d &arena_corner1,
+                   const Eigen::Vector3d &arena_corner2,
+                   const double &max_acc,
+                   const double &max_vel,
+                   const double &d_thresh,
+                   const double &d_min,
+                   const double &k,
+                   const double &kd,
+                   const double &k_force,
                    ros::NodeHandle *nh);
 
     // Methods
     void PrintQuadNames();
     void PrintQuadReferences(const std::string &name);
     void AddQuad(const std::string &quad_name,
+                 const std::string &quad_color,
                  const std::string &output_topic,
                  ros::NodeHandle *nh);
     void FindQuadIndex(const std::string &name,

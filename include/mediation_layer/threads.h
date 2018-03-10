@@ -6,7 +6,7 @@
 namespace threads {
 
 // Thread that runs the mediation layer algorithm
-void MediationLayerThread();
+void MediationLayerThread(const double &rate);
 
 // Thread for verifying heartbeat of quad references and position
 void HeartbeatThread();
@@ -16,7 +16,7 @@ void HeartbeatThread();
 void StaticObjectsVisualizationThread();
 
 // Thread for publishing moving objects (high frequency update)
-void VisualizationThread();
+void VisualizationThread(const double &rate);
 
 }  // namespace threads
 

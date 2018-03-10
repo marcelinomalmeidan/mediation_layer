@@ -3,11 +3,11 @@
 
 namespace threads {
 
-void MediationLayerThread() {
+void MediationLayerThread(const double &rate) {
     ROS_DEBUG("[mediation layer] Mediation Layer Thread started!");
 
     // Rate at which this thread will run
-    double rate = 300.0;  // Rate in Hz
+    // double rate = 300.0;  // Rate in Hz
     double dt = 1/rate;
     ros::Rate loop_rate(rate);
 
@@ -123,15 +123,13 @@ void StaticObjectsVisualizationThread() {
     }
 }
 
-void VisualizationThread() {
+void VisualizationThread(const double &rate) {
 	ROS_DEBUG("[mediation layer] Visualization Thread started!");
 
     // Rate at which this thread will run
-    const double rate = 30.0;  // Rate in Hz
+    // const double rate = 30.0;  // Rate in Hz
     const double dt = 1/rate;
-    const double mass = 0.75;
-    const double gz = 9.81;
-    const double weight = mass*gz;
+    const double gravity = 9.81;
 
     // Visualization marker parameters
     const std::string frame_id = "world";
@@ -145,6 +143,9 @@ void VisualizationThread() {
     const double pos_transparency = 1.0;
     const double reference_size = 0.1;
     visualization_msgs::MarkerArray quadArray;
+    std::set<QuadData> quad_list;
+    ros::Publisher pub_vis;
+    double max_acc;
 
     pthread_mutex_lock(&mutexes_.m_ml_class);
     	const double sphere_size = globals_.obj_mid_layer.d_thresh_;
@@ -160,25 +161,22 @@ void VisualizationThread() {
         quadArray.markers.clear();
 
         pthread_mutex_lock(&mutexes_.m_ml_class);
-        	MediationLayer local_obj_mid_layer = globals_.obj_mid_layer;
+        	// local_obj_mid_layer = globals_.obj_mid_layer;
+            quad_list = globals_.obj_mid_layer.quads_;
+            pub_vis = globals_.obj_mid_layer.pub_vis_;
+            max_acc = globals_.obj_mid_layer.max_acc_;
         pthread_mutex_unlock(&mutexes_.m_ml_class);
 
         std::set<QuadData>::iterator it;
-        for(it = local_obj_mid_layer.quads_.begin(); 
-        	it != local_obj_mid_layer.quads_.end(); ++it) {
+        for(it = quad_list.begin(); it != quad_list.end(); ++it) {
 
         	if(it->ref_is_active) {
         		// Get some parameters for visualization
                 const Eigen::Vector3d Acc2 = helper::Vec32vec3d(it->ml_reference.Acc) + 
-                                             Eigen::Vector3d(0.0, 0.0, weight);
+                                             Eigen::Vector3d(0.0, 0.0, gravity);
                 const Eigen::Matrix3d orientationFrame = helper::Triad(Acc2, it->ml_reference.yaw);
                 const Eigen::Quaterniond orientationMesh = helper::TriadQuat(Acc2, it->ml_reference.yaw + M_PI/4.0);
                 const Eigen::Vector3d ml_ref_pos = helper::Point2vec3d(it->ml_reference.Pos);
-
-                // // Get marker for sphere of influence for each quad
-                // visualization_functions::SphereMarker(ml_ref_pos,
-                //             frame_id, it->name, sphere_size, sphere_color, 
-                //             sphere_transparency, 0, &quadArray);
 
                 // Get marker for reference position of each quad
                 Eigen::Vector3d reference = helper::Point2vec3d(it->reference.Pos);
@@ -194,10 +192,6 @@ void VisualizationThread() {
                 visualization_functions::NameMarker(ml_ref_pos, it->name,
                             frame_id, it->name, text_color, 4, &quadArray);
 
-                // // Get triad frame arrows
-                // const double arrowLength = 0.2; 
-                // visualization_functions::FrameMarker(ml_ref_pos, orientationFrame,
-                //             frame_id, it->name, frame_color, 5, arrowLength, &quadArray);
         	}
 
             // Some of the markers below overwrites the ones above
@@ -223,8 +217,8 @@ void VisualizationThread() {
 
                 // Get force arrow around quad
                 visualization_functions::ForceMarker(position, 
-                            it->force_field, local_obj_mid_layer.max_acc_, 
-                            frame_id, it->name, force_color, 13, &quadArray);
+                            it->force_field, max_acc, frame_id, 
+                            it->name, force_color, 13, &quadArray);
 
                 visualization_functions::NameMarker(position, it->name,
                             frame_id, it->name, text_color, 4, &quadArray);
@@ -239,7 +233,7 @@ void VisualizationThread() {
     	}
 
     	if(quadArray.markers.size() > 0) {
-    		local_obj_mid_layer.pub_vis_.publish(quadArray);
+    		pub_vis.publish(quadArray);
     	}
 
 		loop_rate.sleep();

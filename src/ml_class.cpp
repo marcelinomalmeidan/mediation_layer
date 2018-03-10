@@ -7,14 +7,28 @@ MediationLayer::MediationLayer() {
 }
 
 MediationLayer::MediationLayer(const std::string &visualization_topic,
-			                   const Eigen::Vector3d arena_corner1,
-			                   const Eigen::Vector3d arena_corner2,
+			                   const Eigen::Vector3d &arena_corner1,
+			                   const Eigen::Vector3d &arena_corner2,
+			                   const double &max_acc,
+			                   const double &max_vel,
+			                   const double &d_thresh,
+			                   const double &d_min,
+			                   const double &k,
+			                   const double &kd,
+			                   const double &k_force,
 	                           ros::NodeHandle *nh) {
+	max_acc_ = max_acc;
+	max_vel_ = max_vel;
+	d_thresh_ = d_thresh;
+	d_min_ = d_min;
+	k_ = k;
+	kd_ = kd;
+	k_force_ = k_force;
+	n_quads_ = 0;
 	pub_vis_ = nh->advertise
 		<visualization_msgs::MarkerArray>(visualization_topic, 10);	
 	std::string arena_name = "arena";
 	arena_box_ = BoxPlanes(arena_corner1, arena_corner2, arena_name);
-	n_quads_ = 0;
 }
 
 void MediationLayer::PrintQuadNames() {
@@ -36,6 +50,7 @@ void MediationLayer::PrintQuadReferences(const std::string &name) {
 }
 
 void MediationLayer::AddQuad(const std::string &quad_name,
+                 			 const std::string &quad_color,
                  			 const std::string &output_topic,
                  			 ros::NodeHandle *nh) {
 	QuadData new_quad;
@@ -53,10 +68,14 @@ void MediationLayer::AddQuad(const std::string &quad_name,
 		new_quad.ref_is_active = false;
 		new_quad.odom_is_active = false;
 		new_quad.last_reference_stamp = ros::Time::now();
-		new_quad.error_integrator = rk4(4.0, 3.0, max_vel_, max_acc_);
+		new_quad.error_integrator = rk4(k_, kd_, max_vel_, max_acc_);
 		new_quad.nh = *nh;
 		new_quad.pub_mediation_layer = new_quad.nh.advertise<mg_msgs::PVA>(output_topic, 1);
-		visualization_functions::SelectColor(n_quads_, &new_quad.color);
+		if(quad_color.compare("any") == 0) {
+			visualization_functions::SelectColor(n_quads_, &new_quad.color);
+		}else {
+			visualization_functions::SelectColor(quad_color, &new_quad.color);
+		}
 		quads_.insert(new_quad);
 		n_quads_ = n_quads_ + 1;
 	}
@@ -122,7 +141,7 @@ void MediationLayer::ResetForces() {
 
 void MediationLayer::UpdateVehicleReactionForces() {
 
-	static double k_force = 3;
+	// static double k_force = 3;
     static double f_max = 1000.0;
     const Eigen::Vector3d z_axis(0.0, 0.0, 1.0);
     const double epsilon = 0.001;
@@ -163,7 +182,7 @@ void MediationLayer::UpdateVehicleReactionForces() {
 				if (norm_dist <= d_min_) {  // Avoid calculating negative forces
 					force_magnitude = f_max;
 				} else {
-					force_magnitude = k_force*(d_thresh_-norm_dist)/(norm_dist-d_min_);
+					force_magnitude = k_force_*(d_thresh_-norm_dist)/(norm_dist-d_min_);
 				}
 				force_magnitude = std::min(f_max, force_magnitude);
 
@@ -181,7 +200,7 @@ void MediationLayer::UpdateVehicleReactionForces() {
 
 void MediationLayer::UpdateArenaReactionForces() {
 
-	static double k_force = 3;
+	// static double k_force = 3;
     static double f_max = 1000.0;
 
     std::set<QuadData>::iterator it;
@@ -207,7 +226,7 @@ void MediationLayer::UpdateArenaReactionForces() {
 				if (norm_dist <= d_min_) {  // Avoid calculating negative forces
 					force_magnitude = f_max;
 				} else {
-					force_magnitude = k_force*(d_thresh_-norm_dist)/(norm_dist-d_min_);
+					force_magnitude = k_force_*(d_thresh_-norm_dist)/(norm_dist-d_min_);
 				}
 				force_magnitude = std::min(f_max, force_magnitude);
 				it->force_field = it->force_field + force_magnitude*normal[i];
