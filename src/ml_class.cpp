@@ -68,6 +68,7 @@ void MediationLayer::AddQuad(const std::string &quad_name,
 		new_quad.ref_is_active = false;
 		new_quad.odom_is_active = false;
 		new_quad.last_reference_stamp = ros::Time::now();
+		new_quad.last_measurement_stamp = ros::Time::now();
 		new_quad.error_integrator = rk4(k_, kd_, max_vel_, max_acc_);
 		new_quad.nh = *nh;
 		new_quad.pub_mediation_layer = new_quad.nh.advertise<mg_msgs::PVA>(output_topic, 1);
@@ -250,7 +251,7 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 		it->error_integrator.UpdateStates(it->force_field, 
 			                              it->reference, dt);
 
-		// Get errors from the error_integrator
+		// Get outputs from the error_integrator
 		geometry_msgs::Point pos;
 		geometry_msgs::Vector3 pos_dot, pos_ddot;
 		it->error_integrator.GetPos(&pos);
@@ -261,11 +262,8 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 		mg_msgs::PVA ml_reference;
 		
 		ml_reference.Pos = pos;
-			// helper::SubtractPoint(it->reference.Pos, error);
 		ml_reference.Vel = pos_dot;
-			// helper::SubtractVector3(it->reference.Vel, error_dot);
 		ml_reference.Acc = pos_ddot;
-			// helper::SubtractVector3(it->reference.Acc, error_ddot);
 		ml_reference.yaw = it->reference.yaw;
 
 		// Set new reference data

@@ -1,0 +1,77 @@
+<launch>
+
+  <node pkg="mediation_layer"
+    type="mediation_layer"
+    name="mediation_layer"
+    output="screen">
+
+    <!-- List of quad names -->
+    <rosparam param="QuadList"> ["phoenix",
+                                 "valkyrie",
+                                 "hippogryph",
+                                 "harry",
+                                 "hermione",
+                                 "ron"] </rosparam>
+
+    <!-- List of colors for the quads -->
+    <!-- Possible colors: red, blue, green, yellow, orange, purple, chartreuse, teal, pink -->
+    <!-- You can also choose "any" -->
+    <rosparam param="ColorList"> ["red",
+                                  "blue",
+                                  "any",
+                                  "yellow",
+                                  "orange",
+                                  "purple"] </rosparam>
+
+    <!-- Set opposite corners of the arena -->
+    <rosparam param="arena_corner1"> [-10.0, -2.5, 0.0]</rosparam>
+    <rosparam param="arena_corner2"> [10.0, 2.5, 4.0]</rosparam>
+
+    <!-- Mediation layer integrator parameters -->
+    <rosparam param="max_acceleration"> 6.0 </rosparam>
+    <rosparam param="max_velocity"> 2.5 </rosparam>
+    <rosparam param="dist_threshold"> 1.0 </rosparam> <!-- Distance at which one quad influences another -->
+    <rosparam param="dist_minimum"> 0.5 </rosparam> <!-- Minimum allowed distance between quads -->
+    <rosparam param="k"> 4.0 </rosparam> <!-- Integrator proportional gain -->
+    <rosparam param="kd"> 3.0 </rosparam> <!-- Integrator derivative gain -->
+    <rosparam param="k_force"> 3.0 </rosparam> <!-- Respulsion force gain -->
+
+    <!-- Set update rate for the threads -->
+    <rosparam param="mediation_layer_rate"> 300.0 </rosparam> <!-- Integrator -->
+    <rosparam param="rviz_update_rate"> 30.0 </rosparam> <!-- Visualization -->
+
+    <!-- Set Input/Output Topics -->
+    <param name="input_ref_topic" value="/px4_control/PVA_Ref"/>
+    <param name="input_odom_topic" value="/local_odom"/>
+    <param name="output_ref_topic" value="/px4_control/PVA_Ref_ML"/>
+
+  </node>
+
+  <node pkg="double_integrator_dynamics"
+    type="double_integrator_dynamics"
+    name="double_integrator_dynamics"
+    output="screen">
+
+    <!-- List of quad names -->
+    <rosparam param="QuadList"> ["phoenix",
+                                 "valkyrie",
+                                 "hippogryph",
+                                 "harry",
+                                 "hermione",
+                                 "ron"] </rosparam>
+
+    <rosparam param="k"> 4.0 </rosparam> <!-- Integrator proportional gain -->
+    <rosparam param="kd"> 3.0 </rosparam> <!-- Integrator derivative gain -->
+
+    <!-- Set update rate for the threads -->
+    <rosparam param="integrator_rate"> 300.0 </rosparam> <!-- Integrator -->
+
+    <!-- Set Input/Output Topics -->
+    <param name="input_ref_topic" value="/px4_control/PVA_Ref_ML"/>
+    <param name="output_odom_topic" value="/local_odom"/>
+
+  </node>
+
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find mediation_layer)/rviz_cfg/ML_rviz_config.rviz"/>
+</launch>
+

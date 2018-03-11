@@ -11,12 +11,8 @@ void MediationLayerThread(const double &rate) {
     double dt = 1/rate;
     ros::Rate loop_rate(rate);
 
-
     // Run the Mediation Layer loop
-    std::set<QuadData>::iterator it1, it2;
     while (ros::ok()) {
-        // Get time for when this task started
-        const ros::Time t0 = ros::Time::now();
 
         pthread_mutex_lock(&mutexes_.m_ml_class);
 
@@ -36,9 +32,6 @@ void MediationLayerThread(const double &rate) {
             globals_.obj_mid_layer.PublishMLReferences();
 
         pthread_mutex_unlock(&mutexes_.m_ml_class);
-
-        // ros::Duration ml_time = ros::Time::now() - t0;
-        // ROS_INFO("Mediation Layer execution time: %f", ml_time.toSec());
 
         loop_rate.sleep();
     }
@@ -164,7 +157,6 @@ void VisualizationThread(const double &rate) {
         quadArray.markers.clear();
 
         pthread_mutex_lock(&mutexes_.m_ml_class);
-        	// local_obj_mid_layer = globals_.obj_mid_layer;
             quad_list = globals_.obj_mid_layer.quads_;
             pub_vis = globals_.obj_mid_layer.pub_vis_;
             max_acc = globals_.obj_mid_layer.max_acc_;
@@ -185,15 +177,15 @@ void VisualizationThread(const double &rate) {
                 Eigen::Vector3d reference = helper::Point2vec3d(it->reference.Pos);
                 visualization_functions::SphereMarker(reference,
                             frame_id, it->name, reference_size, it->color, 
-                            reference_transparency, 1, &quadArray);
+                            reference_transparency, 0, &quadArray);
 
                 // Get quad mesh
                 visualization_functions::MeshMarker(ml_ref_pos, orientationMesh,
                             frame_id, it->name, quad_size, it->color, 
-                            reference_transparency, 2, &quadArray);
+                            reference_transparency, 1, &quadArray);
 
                 visualization_functions::NameMarker(ml_ref_pos, it->name,
-                            frame_id, it->name, text_color, 4, &quadArray);
+                            frame_id, it->name, text_color, 2, &quadArray);
 
         	}
 
@@ -204,32 +196,32 @@ void VisualizationThread(const double &rate) {
                 Eigen::Quaterniond q_mesh(q.w, q.x, q.y, q.z);
                 const Eigen::Matrix3d orientation_frame = q_mesh.normalized().toRotationMatrix();
                 const Eigen::Quaterniond rot_quad(cos(M_PI/8.0), 0.0, 0.0, sin(M_PI/8.0)); // Quad mesh is rotated by 45deg
-                q_mesh = rot_quad*q_mesh;
+                q_mesh = q_mesh*rot_quad;
                 Eigen::Vector3d position = 
                     helper::Point2vec3d(it->vehicle_odom.pose.pose.position);
                 
                 // Get marker for sphere of influence for each quad
                 visualization_functions::SphereMarker(position,
                             frame_id, it->name, sphere_size, sphere_color, 
-                            sphere_transparency, 0, &quadArray);
+                            sphere_transparency, 3, &quadArray);
 
                 // Get quad mesh
                 visualization_functions::MeshMarker(position, q_mesh,
                             frame_id, it->name, quad_size, it->color, 
-                            pos_transparency, 12, &quadArray);
+                            pos_transparency, 4, &quadArray);
 
                 // Get force arrow around quad
                 visualization_functions::ForceMarker(position, 
                             it->force_field, max_acc, frame_id, 
-                            it->name, force_color, 13, &quadArray);
+                            it->name, force_color, 5, &quadArray);
 
                 visualization_functions::NameMarker(position, it->name,
-                            frame_id, it->name, text_color, 4, &quadArray);
+                            frame_id, it->name, text_color, 2, &quadArray);
 
                 // Get triad frame arrows
                 const double arrowLength = 0.2; 
                 visualization_functions::FrameMarker(position, orientation_frame,
-                            frame_id, it->name, frame_color, 15, arrowLength, &quadArray);
+                            frame_id, it->name, frame_color, 6, arrowLength, &quadArray);
             }
 
 
