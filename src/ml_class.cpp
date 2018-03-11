@@ -26,7 +26,7 @@ MediationLayer::MediationLayer(const std::string &visualization_topic,
 	k_force_ = k_force;
 	n_quads_ = 0;
 	pub_vis_ = nh->advertise
-		<visualization_msgs::MarkerArray>(visualization_topic, 10);	
+		<visualization_msgs::MarkerArray>(visualization_topic, 1);	
 	std::string arena_name = "arena";
 	arena_box_ = BoxPlanes(arena_corner1, arena_corner2, arena_name);
 }

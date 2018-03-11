@@ -90,6 +90,8 @@ void StaticObjectsVisualizationThread() {
 
 	const std_msgs::ColorRGBA ground_color = visualization_functions::Color::DarkGreen();
 	const double gound_transparency = 1.0;
+    BoxPlanes arena_box;
+    ros::Publisher pub_vis;
 
 	// Visualization markers for the arena
     visualization_msgs::MarkerArray static_obj_markers;
@@ -101,12 +103,13 @@ void StaticObjectsVisualizationThread() {
     	static_obj_markers.markers.clear();
 
 	    pthread_mutex_lock(&mutexes_.m_ml_class);
-	    	MediationLayer local_obj_mid_layer = globals_.obj_mid_layer;
+            pub_vis = globals_.obj_mid_layer.pub_vis_;
+            arena_box = globals_.obj_mid_layer.arena_box_;
 	    pthread_mutex_unlock(&mutexes_.m_ml_class);
 
 	    // Get corners from arena
-	    Eigen::Vector3d corner1 = local_obj_mid_layer.arena_box_.DLB_;
-	    Eigen::Vector3d corner2 = local_obj_mid_layer.arena_box_.DRF_;
+	    Eigen::Vector3d corner1 = arena_box.DLB_;
+	    Eigen::Vector3d corner2 = arena_box.DRF_;
 	    Eigen::Vector3d corner3(corner1[0], corner2[1], corner1[2]);
 	    Eigen::Vector3d corner4(corner2[0], corner1[1], corner1[2]);
 
@@ -114,9 +117,9 @@ void StaticObjectsVisualizationThread() {
                  corner3, corner4, frame_id, ground_ns, ground_color,
                  gound_transparency, &static_obj_markers);
 
-	    local_obj_mid_layer.arena_box_.VisualizeBox(frame_id, &static_obj_markers);
+	    arena_box.VisualizeBox(frame_id, &static_obj_markers);
 
-	    local_obj_mid_layer.pub_vis_.publish(static_obj_markers);
+	    pub_vis.publish(static_obj_markers);
 
 	    loop_rate.sleep();
 
@@ -134,7 +137,7 @@ void VisualizationThread(const double &rate) {
     // Visualization marker parameters
     const std::string frame_id = "world";
     const double quad_size = 0.375;
-    const double sphere_transparency = 0.05;
+    const double sphere_transparency = 0.1;
     const std_msgs::ColorRGBA frame_color = visualization_functions::Color::White();
     const std_msgs::ColorRGBA sphere_color = visualization_functions::Color::White();
     const std_msgs::ColorRGBA text_color = visualization_functions::Color::Black();
