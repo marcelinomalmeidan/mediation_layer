@@ -39,11 +39,14 @@
     <!-- Set update rate for the threads -->
     <rosparam param="mediation_layer_rate"> 300.0 </rosparam> <!-- Integrator -->
     <rosparam param="rviz_update_rate"> 30.0 </rosparam> <!-- Visualization -->
+    <rosparam param="game_state_update_rate"> 30.0 </rosparam> <!-- game state -->
 
     <!-- Set Input/Output Topics -->
     <param name="input_ref_topic" value="/px4_control/PVA_Ref"/>
     <param name="input_odom_topic" value="/local_odom"/>
     <param name="output_ref_topic" value="/px4_control/PVA_Ref_ML"/>
+    <param name="visualization_topic" value="/mediation_layer/Visualization"/>
+    <param name="game_state_topic" value="/mediation_layer/Game_State"/>
 
   </node>
 

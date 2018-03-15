@@ -53,13 +53,11 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /Visualization
+      Marker Topic: /mediation_layer/Visualization
       Name: MarkerArray
       Namespaces:
         box/arena: true
         ground: true
-        phoenix: true
-        valkyrie: true
       Queue Size: 100
       Value: true
   Enabled: true

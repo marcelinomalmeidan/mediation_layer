@@ -14,7 +14,7 @@
 #include "nav_msgs/Odometry.h"
 
 #include "mg_msgs/PVA.h"
-
+#include "mg_msgs/GameState.h"
 
 struct QuadData {
     std::string name;                            // Unique name for vehicle
@@ -42,7 +42,8 @@ class MediationLayer {
  	std::set<QuadData> quads_;
     BoxPlanes arena_box_;
  	uint n_quads_;
-    ros::Publisher pub_vis_;  // Publisher for visualization
+    ros::Publisher pub_vis_;        // Publisher for visualization
+    ros::Publisher pub_game_state_; // Publisher for game state
     double max_acc_ = 6.0;
     double max_vel_ = 2.5;
     double d_thresh_ = 1.0;   // Distance at which one quad influences another
@@ -54,6 +55,7 @@ class MediationLayer {
     // Constructors
     MediationLayer();
     MediationLayer(const std::string &visualization_topic,
+                   const std::string &game_state_topic,
                    const Eigen::Vector3d &arena_corner1,
                    const Eigen::Vector3d &arena_corner2,
                    const double &max_acc,

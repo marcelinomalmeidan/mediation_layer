@@ -75,6 +75,34 @@ void HeartbeatThread() {
     }
 }
 
+void GameStatePubThread(const double &rate) {
+    ros::Rate loop_rate(rate);
+    std::set<QuadData> quad_list;
+    ros::Publisher pub_game_state;
+
+
+    while (ros::ok()) {
+        mg_msgs::GameState game_state;
+
+        pthread_mutex_lock(&mutexes_.m_ml_class);
+            quad_list = globals_.obj_mid_layer.quads_;
+            pub_game_state = globals_.obj_mid_layer.pub_game_state_;
+        pthread_mutex_unlock(&mutexes_.m_ml_class);
+
+        std::set<QuadData>::iterator it;
+        for(it = quad_list.begin(); it != quad_list.end(); ++it) {
+
+            if(it->odom_is_active) {
+                game_state.GameState.push_back(it->vehicle_odom);
+            }
+        }
+
+        pub_game_state.publish(game_state);
+
+        loop_rate.sleep();
+    }
+}
+
 void StaticObjectsVisualizationThread() {
 	ROS_DEBUG("[mediation layer] Static Objects Visualization Thread started!");
 

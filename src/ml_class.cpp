@@ -7,6 +7,7 @@ MediationLayer::MediationLayer() {
 }
 
 MediationLayer::MediationLayer(const std::string &visualization_topic,
+							   const std::string &game_state_topic,
 			                   const Eigen::Vector3d &arena_corner1,
 			                   const Eigen::Vector3d &arena_corner2,
 			                   const double &max_acc,
@@ -27,6 +28,7 @@ MediationLayer::MediationLayer(const std::string &visualization_topic,
 	n_quads_ = 0;
 	pub_vis_ = nh->advertise
 		<visualization_msgs::MarkerArray>(visualization_topic, 1);	
+	pub_game_state_ = nh->advertise<mg_msgs::GameState>(game_state_topic, 1);
 	std::string arena_name = "arena";
 	arena_box_ = BoxPlanes(arena_corner1, arena_corner2, arena_name);
 }

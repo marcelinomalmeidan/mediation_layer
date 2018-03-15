@@ -15,6 +15,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "nav_msgs/Odometry.h"
 #include "mg_msgs/PVA.h"
+#include "mg_msgs/GameState.h"
 
 
 // Declare global variables
