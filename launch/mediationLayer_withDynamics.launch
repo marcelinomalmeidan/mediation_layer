@@ -1,17 +1,17 @@
 <launch>
 
+    <!-- List of quad names -->
+  <rosparam param="QuadList"> ["phoenix",
+                               "valkyrie",
+                               "hippogryph",
+                               "harry",
+                               "hermione",
+                               "ron"] </rosparam>
+
   <node pkg="mediation_layer"
     type="mediation_layer"
     name="mediation_layer"
     output="screen">
-
-    <!-- List of quad names -->
-    <rosparam param="QuadList"> ["phoenix",
-                                 "valkyrie",
-                                 "hippogryph",
-                                 "harry",
-                                 "hermione",
-                                 "ron"] </rosparam>
 
     <!-- List of colors for the quads -->
     <!-- Possible colors: red, blue, green, yellow, orange, purple, chartreuse, teal, pink -->
@@ -54,14 +54,6 @@
     type="double_integrator_dynamics"
     name="double_integrator_dynamics"
     output="screen">
-
-    <!-- List of quad names -->
-    <rosparam param="QuadList"> ["phoenix",
-                                 "valkyrie",
-                                 "hippogryph",
-                                 "harry",
-                                 "hermione",
-                                 "ron"] </rosparam>
 
     <rosparam param="k"> 4.0 </rosparam> <!-- Integrator proportional gain -->
     <rosparam param="kd"> 3.0 </rosparam> <!-- Integrator derivative gain -->
