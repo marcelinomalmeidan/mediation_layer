@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   cmake_modules
   mg_msgs
+  tf
 )
 
 find_package(Eigen REQUIRED)

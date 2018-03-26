@@ -103,6 +103,65 @@ void GameStatePubThread(const double &rate) {
     }
 }
 
+void tfThread(const double &rate) {
+    static ros::Rate loop_rate(rate);
+    static std::set<QuadData> quad_list;
+    static tf::TransformBroadcaster br;
+    static std::string world_frame = "world";
+    std::string vehicle_frame, camera_frame;
+    tf::Vector3 camPos(0.1, 0.0, 0.0);
+
+    // Get camera rotation
+    Eigen::Quaterniond q_cam1(cos(M_PI/4.0), 0.0, sin(M_PI/4.0), 0.0);
+    Eigen::Quaterniond q_cam2(cos(M_PI/4.0), 0.0, 0.0, -sin(M_PI/4.0));
+    Eigen::Quaterniond q_cam = q_cam1*q_cam2;
+
+    while (ros::ok()) {
+
+        pthread_mutex_lock(&mutexes_.m_ml_class);
+            quad_list = globals_.obj_mid_layer.quads_;
+        pthread_mutex_unlock(&mutexes_.m_ml_class);
+
+        std::set<QuadData>::iterator it;
+        for(it = quad_list.begin(); it != quad_list.end(); ++it) {
+            if(!it->odom_is_active) {
+                continue;
+            }
+            
+            tf::Transform transform, transform_cam;
+            geometry_msgs::Pose pose = it->vehicle_odom.pose.pose;
+
+            // Set vehicle pose
+            transform.setOrigin( tf::Vector3(pose.position.x,
+                                           pose.position.y, 
+                                           pose.position.z));
+            tf::Quaternion q(pose.orientation.x, pose.orientation.y,
+                             pose.orientation.z, pose.orientation.w);
+            transform.setRotation(q);
+
+            // Set camera pose
+            transform_cam.setOrigin(camPos);
+            tf::Quaternion tf_qcam(q_cam.x(), q_cam.y(), q_cam.z(), q_cam.w());
+            transform_cam.setRotation(tf_qcam);
+
+            // Get time
+            ros::Time time_now = ros::Time::now();
+            
+            // Frame ids
+            vehicle_frame = it->name;
+            camera_frame = it->name + "/camera";
+
+            // Send transforms
+            br.sendTransform(tf::StampedTransform(transform, time_now,
+                                                  world_frame, vehicle_frame));
+            br.sendTransform(tf::StampedTransform(transform_cam, time_now,
+                                                  vehicle_frame, camera_frame));
+        }
+    
+        loop_rate.sleep();
+    }
+}
+
 void StaticObjectsVisualizationThread() {
 	ROS_DEBUG("[mediation layer] Static Objects Visualization Thread started!");
 
@@ -246,10 +305,10 @@ void VisualizationThread(const double &rate) {
                 visualization_functions::NameMarker(position, it->name,
                             frame_id, it->name, text_color, 2, &quadArray);
 
-                // Get triad frame arrows
-                const double arrowLength = 0.2; 
-                visualization_functions::FrameMarker(position, orientation_frame,
-                            frame_id, it->name, frame_color, 6, arrowLength, &quadArray);
+                // // Get triad frame arrows
+                // const double arrowLength = 0.2; 
+                // visualization_functions::FrameMarker(position, orientation_frame,
+                //             frame_id, it->name, frame_color, 6, arrowLength, &quadArray);
             }
 
 

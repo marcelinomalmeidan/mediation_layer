@@ -40,6 +40,7 @@
     <rosparam param="mediation_layer_rate"> 300.0 </rosparam> <!-- Integrator -->
     <rosparam param="rviz_update_rate"> 30.0 </rosparam> <!-- Visualization -->
     <rosparam param="game_state_update_rate"> 30.0 </rosparam> <!-- game state -->
+    <rosparam param="tf_update_rate"> 60.0 </rosparam> <!--tf publisher -->
 
     <!-- Set Input/Output Topics -->
     <param name="input_ref_topic" value="/px4_control/PVA_Ref"/>

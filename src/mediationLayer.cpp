@@ -28,11 +28,13 @@ int main(int argc, char** argv){
   node.getParam("k_force", k_force);
 
   // Get thread parameters ------------------------------------------
-  double mediation_layer_rate, rviz_update_rate, game_state_update_rate;
+  double mediation_layer_rate, rviz_update_rate, 
+         game_state_update_rate, tf_update_rate;
   std::string visualization_topic, game_state_topic;
   node.getParam("mediation_layer_rate", mediation_layer_rate);
   node.getParam("rviz_update_rate", rviz_update_rate);
   node.getParam("game_state_update_rate", game_state_update_rate);
+  node.getParam("tf_update_rate", tf_update_rate);
   node.getParam("visualization_topic", visualization_topic);
   node.getParam("game_state_topic", game_state_topic);
   
@@ -85,12 +87,13 @@ int main(int argc, char** argv){
   // Threads -------------------------------------------
   std::thread h_mediation_layer_thread, h_visualization_thread;
   std::thread h_static_visualization_thread, h_heartbeat_thread;
-  std::thread h_game_state_pub_thread;
+  std::thread h_game_state_pub_thread, h_tf_thread;
   h_mediation_layer_thread = std::thread(threads::MediationLayerThread, mediation_layer_rate);
   h_visualization_thread = std::thread(threads::VisualizationThread, rviz_update_rate);
   h_static_visualization_thread = std::thread(threads::StaticObjectsVisualizationThread);
   h_heartbeat_thread = std::thread(threads::HeartbeatThread);
   h_game_state_pub_thread = std::thread(threads::GameStatePubThread, game_state_update_rate);
+  h_tf_thread = std::thread(threads::tfThread, tf_update_rate);
 
   // ROS loop that starts callbacks/publishers
   ros::spin();

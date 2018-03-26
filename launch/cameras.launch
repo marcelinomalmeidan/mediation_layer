@@ -1,0 +1,60 @@
+<launch>
+
+  <arg name="height" default="720" />
+  <arg name="width" default="1280" />
+  <arg name="f_length" default="960" />
+  <arg name="half_height" default="$(eval 0.5*arg('height'))" />
+  <arg name="half_width" default="$(eval 0.5*arg('width'))" />
+
+  <arg name="frame1" default="valkyrie/camera" />
+  <group ns="$(arg frame1)">
+  <node name="camera_info" pkg="rostopic" type="rostopic"
+      args="pub camera_info sensor_msgs/CameraInfo
+     '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: '$(arg frame1)'},
+      height: $(arg height), width: $(arg width), distortion_model: 'plumb_bob',
+      D: [0],
+      K: [$(arg f_length),             0.0, $(arg half_width), 
+          0.0,             $(arg f_length), $(arg half_height),
+          0.0,                         0.0,               1.0],
+      R: [1.0, 0.0, 0.0,
+          0.0, 1.0, 0.0,
+          0.0, 0.0, 1.0],
+      P: [$(arg f_length),             0.0,  $(arg half_width), 0.0,
+          0.0,             $(arg f_length), $(arg half_height), 0.0, 
+          0.0,                         0.0,                1.0, 0.0],
+      binning_x: 0, binning_y: 0,
+      roi: {x_offset: 0, 
+            y_offset: 0, 
+            height: $(arg height), 
+            width: $(arg width), 
+            do_rectify: true}}' -r 2"
+      output="screen"/>
+  </group>
+
+  <arg name="frame2" default="phoenix/camera" />
+  <group ns="$(arg frame2)">
+  <node name="camera_info" pkg="rostopic" type="rostopic"
+      args="pub camera_info sensor_msgs/CameraInfo
+     '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: '$(arg frame2)'},
+      height: $(arg height), width: $(arg width), distortion_model: 'plumb_bob',
+      D: [0],
+      K: [$(arg f_length),             0.0, $(arg half_width), 
+          0.0,             $(arg f_length), $(arg half_height),
+          0.0,                         0.0,               1.0],
+      R: [1.0, 0.0, 0.0,
+          0.0, 1.0, 0.0,
+          0.0, 0.0, 1.0],
+      P: [$(arg f_length),             0.0,  $(arg half_width), 0.0,
+          0.0,             $(arg f_length), $(arg half_height), 0.0, 
+          0.0,                         0.0,                1.0, 0.0],
+      binning_x: 0, binning_y: 0,
+      roi: {x_offset: 0, 
+            y_offset: 0, 
+            height: $(arg height), 
+            width: $(arg width), 
+            do_rectify: true}}' -r 2"
+      output="screen"/>
+  </group>
+
+</launch>
+

@@ -14,6 +14,9 @@ void HeartbeatThread();
 // Thread for publishing the game state
 void GameStatePubThread(const double &rate);
 
+// Thread for publishing the tf tree
+void tfThread(const double &rate);
+
 // Thread for publishing static objects. These are republished with
 // low frequency just in case RVIZ is restarted
 void StaticObjectsVisualizationThread();
