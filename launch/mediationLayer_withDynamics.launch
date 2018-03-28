@@ -23,6 +23,9 @@
                                   "orange",
                                   "purple"] </rosparam>
 
+    <!-- Define which quads have shield -->
+    <rosparam param="HasShield"> [0, 0, 0, 0, 0, 0] </rosparam>
+
     <!-- Set opposite corners of the arena -->
     <rosparam param="arena_corner1"> [-10.0, -2.5, 0.0]</rosparam>
     <rosparam param="arena_corner2"> [10.0, 2.5, 4.0]</rosparam>

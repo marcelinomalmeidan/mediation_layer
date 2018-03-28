@@ -74,6 +74,47 @@ void SphereMarker(const Eigen::Vector3d &point,
 	markerArray->markers.push_back(marker);
 }
 
+void PlaneMarker(const Eigen::Vector3d &point,
+                 const std::string frame_id,
+                 const std::string &ns,  // namespace
+                 const double &size,
+                 const std_msgs::ColorRGBA &color,
+                 const double &transparency,  // 0 -> transparent, 1 -> opaque
+                 const int &seqNumber,
+                 const double heading_direction,
+                 visualization_msgs::MarkerArray *markerArray) {
+    // Initialize array
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = frame_id;
+    marker.header.stamp = ros::Time::now();
+    marker.ns = ns;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.orientation.w = 1.0;
+    marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+    marker.id = seqNumber;
+    marker.scale.x = 1.0;
+    marker.scale.y = 1.0;
+    marker.scale.z = 1.0;
+    marker.color = color;
+    marker.color.a = transparency;
+
+	Eigen::Vector3d origin, x_dir, y_dir, z_dir;
+	Eigen::Vector3d corner1, corner2, corner3, corner4;
+	x_dir << cos(heading_direction), sin(heading_direction), 0.0;
+	z_dir << 0.0, 0.0, 1.0;
+	y_dir << z_dir.cross(x_dir);
+	
+	origin = point + 0.5*size*x_dir;
+	corner1 = origin - 0.5*size*y_dir - 0.5*size*z_dir;
+	corner2 = origin + 0.5*size*y_dir + 0.5*size*z_dir;
+	corner3 = origin + 0.5*size*y_dir - 0.5*size*z_dir;
+	corner4 = origin - 0.5*size*y_dir + 0.5*size*z_dir;
+
+    // Get markers
+    visualization_functions::SetPlanePoints(corner1, corner2, corner3, corner4, marker.color, &marker);
+    markerArray->markers.push_back(marker);
+}
+
 void MeshMarker(const Eigen::Vector3d &point,
 	            const Eigen::Quaterniond &quat,
 	            const std::string &frame_id,

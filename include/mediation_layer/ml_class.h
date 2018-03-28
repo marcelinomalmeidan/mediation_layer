@@ -22,6 +22,7 @@ struct QuadData {
     mutable mg_msgs::PVA ml_reference;       // Output reference
     mutable nav_msgs::Odometry vehicle_odom;     // Measured odometry
     mutable Eigen::Vector3d force_field;         // Field for saving ML force input
+    mutable bool has_shield;                     // Shield for defending quads
     mutable bool ref_is_active;                  // Flag indicating health of references
     mutable bool odom_is_active;                 // Flag indicating health of measurements
     mutable ros::Time last_reference_stamp;      // For heartbeat
@@ -72,6 +73,7 @@ class MediationLayer {
     void PrintQuadReferences(const std::string &name);
     void AddQuad(const std::string &quad_name,
                  const std::string &quad_color,
+                 const bool has_shield,
                  const std::string &output_topic,
                  ros::NodeHandle *nh);
     void FindQuadIndex(const std::string &name,

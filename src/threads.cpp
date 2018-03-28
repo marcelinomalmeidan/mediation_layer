@@ -218,6 +218,7 @@ void VisualizationThread(const double &rate) {
     const std::string frame_id = "world";
     const double quad_size = 0.375;
     const double sphere_transparency = 0.1;
+    const double shield_transparency = 0.25;
     const std_msgs::ColorRGBA frame_color = visualization_functions::Color::White();
     const std_msgs::ColorRGBA sphere_color = visualization_functions::Color::White();
     const std_msgs::ColorRGBA text_color = visualization_functions::Color::Black();
@@ -287,28 +288,35 @@ void VisualizationThread(const double &rate) {
                 Eigen::Vector3d position = 
                     helper::Point2vec3d(it->vehicle_odom.pose.pose.position);
                 
-                // Get marker for sphere of influence for each quad
+                // Get marker for sphere of influence of each quad
                 visualization_functions::SphereMarker(position,
                             frame_id, it->name, sphere_size, sphere_color, 
                             sphere_transparency, 3, &quadArray);
 
+                // Get shield plane marker
+                if(it->has_shield) {
+                    visualization_functions::PlaneMarker(position,
+                            frame_id, it->name, sphere_size, sphere_color,
+                            shield_transparency, 4, it->ml_reference.yaw, &quadArray);
+                }
+
                 // Get quad mesh
                 visualization_functions::MeshMarker(position, q_mesh,
                             frame_id, it->name, quad_size, it->color, 
-                            pos_transparency, 4, &quadArray);
+                            pos_transparency, 5, &quadArray);
 
                 // Get force arrow around quad
                 visualization_functions::ForceMarker(position, 
                             it->force_field, max_acc, frame_id, 
-                            it->name, force_color, 5, &quadArray);
+                            it->name, force_color, 6, &quadArray);
 
                 visualization_functions::NameMarker(position, it->name,
                             frame_id, it->name, text_color, 2, &quadArray);
 
-                // // Get triad frame arrows
-                // const double arrowLength = 0.2; 
-                // visualization_functions::FrameMarker(position, orientation_frame,
-                //             frame_id, it->name, frame_color, 6, arrowLength, &quadArray);
+                // Get triad frame arrows
+                const double arrowLength = 0.2; 
+                visualization_functions::FrameMarker(position, orientation_frame,
+                            frame_id, it->name, frame_color, 7, arrowLength, &quadArray);
             }
 
 

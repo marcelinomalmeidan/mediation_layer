@@ -45,13 +45,20 @@ int main(int argc, char** argv){
                      arena_corner1, arena_corner2, max_acc, max_vel, 
   	                 d_thresh, d_min, k, kd, k_force, &node);
 
-  // Get all quad names and colors ----------------------------------
+  // Get all quad names, colors and shields -------------------------
   std::vector<std::string> quad_names, quad_colors;
+  std::vector<bool> has_shield;
   node.getParam("QuadList", quad_names);
   node.getParam("ColorList", quad_colors);
+  node.getParam("HasShield", has_shield);
   if (quad_names.size() != quad_colors.size()) {
   	ROS_ERROR("[mediation layer]: Number of quads is different than number of colors!");
   	return 0;
+  }
+  if (quad_names.size() != has_shield.size()) {
+    ROS_INFO("%d", int(has_shield.size()));
+    ROS_ERROR("[mediation layer]: Number of quads is different than shield assignment!");
+    return 0;
   }
 
   // Get all topic suffixes -----------------------------------------
@@ -69,7 +76,7 @@ int main(int argc, char** argv){
   	std::string output_topic;
   	output_topic = "/" + quad_names[i] + output_ref_topic;
   	globals_.obj_mid_layer.AddQuad(quad_names[i], quad_colors[i],
-  		                           output_topic, &node);
+  		                             has_shield[i], output_topic, &node);
 
   	// Set subscriber to get references to the quad
     sub_topic_name = "/" + quad_names[i] + input_ref_topic;

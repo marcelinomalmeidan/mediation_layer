@@ -121,6 +121,53 @@ class Plane3d{
         // Project the calculated distance into the normal vector
         *dist =  dist_point_origin.dot(normal_);
     }
+
+    // This function returns a positive distance if point is in the
+    // direction of the normal, and a negative value if it is
+    // in the opposite direction of the normal
+    void ProjectPointOntoPlane(const Eigen::Vector3d &point,
+                               Eigen::Vector3d *nearest_point,
+                               double *dist) {
+        this->DistancePoint2Plane(point, dist);
+        *nearest_point = point - (*dist)*normal_;
+    }
+};
+
+// Walls are planes with boundaries
+class Wall{
+ public:
+    Plane3d plane_;
+    Eigen::Vector3d direction1_, direction2_;
+    double width_, height_;
+
+    // Constructors ----------------------------------------------
+    Wall() { }
+
+    // Construct wall from an origin, a normal, and two directions
+    // height is along direction1, while width is along direction2
+    // (make sure that normal, direction1, and direction2 
+    //  are mutually perpendicular!!!!)
+    Wall(const Eigen::Vector3d &origin,
+         const Eigen::Vector3d &normal,
+         const Eigen::Vector3d &direction1,
+         const Eigen::Vector3d &direction2,
+         const double height,
+         const double width) {
+        plane_ = Plane3d(origin, normal);
+        direction1_ = direction1;
+        direction2_ = direction2;
+        height_ = height;
+        width_ = width;
+    }
+
+    // Calculates distance to wall plane
+    // This function returns a positive value if point is in the
+    // direction of the normal, and a negative value if it is
+    // in the opposite direction of the normal
+    void DistancePoint2WallPlane(const Eigen::Vector3d &point,
+                                 double *dist) {
+        plane_.DistancePoint2Plane(point, dist);
+    }
 };
 
 

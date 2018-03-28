@@ -50,6 +50,18 @@ void SphereMarker(const Eigen::Vector3d &point,
                   const int &seqNumber,
                   visualization_msgs::MarkerArray *markerArray);
 
+// Plane with normal along x of rotation matrix, centered at boundary of
+// quad's sphere
+void PlaneMarker(const Eigen::Vector3d &point,
+                 const std::string frame_id,
+                 const std::string &ns,  // namespace
+                 const double &size,
+                 const std_msgs::ColorRGBA &color,
+                 const double &transparency,  // 0 -> transparent, 1 -> opaque
+                 const int &seqNumber,
+                 const double heading_direction,
+                 visualization_msgs::MarkerArray *markerArray);
+
 // Quadcopter mesh
 void MeshMarker(const Eigen::Vector3d &point,
                 const Eigen::Quaterniond &quat,

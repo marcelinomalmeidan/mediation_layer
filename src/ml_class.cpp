@@ -53,6 +53,7 @@ void MediationLayer::PrintQuadReferences(const std::string &name) {
 
 void MediationLayer::AddQuad(const std::string &quad_name,
                  			 const std::string &quad_color,
+                 			 const bool has_shield,
                  			 const std::string &output_topic,
                  			 ros::NodeHandle *nh) {
 	QuadData new_quad;
@@ -67,6 +68,7 @@ void MediationLayer::AddQuad(const std::string &quad_name,
 		new_quad.ml_reference = emptyPVA;
 		new_quad.vehicle_odom = helper::GetZeroOdom();
 		new_quad.force_field = Eigen::Vector3d(0.0, 0.0, 0.0);
+		new_quad.has_shield = has_shield;
 		new_quad.ref_is_active = false;
 		new_quad.odom_is_active = false;
 		new_quad.last_reference_stamp = ros::Time::now();
@@ -157,7 +159,7 @@ void MediationLayer::UpdateVehicleReactionForces() {
 		}
 
 		// Update the force field to react to other vehicles
-		for(it2 = quads_.begin(); it2 != quads_.end(); ++it2) {
+		for(it2 = it1; it2 != quads_.end(); ++it2) {
 			if (it1 == it2) {
 				continue;
 			}
@@ -166,10 +168,14 @@ void MediationLayer::UpdateVehicleReactionForces() {
 				continue;
 			}
 
+			// Get positions of quads
+			const Eigen::Vector3d pos1 = 
+				helper::Point2vec3d(it1->vehicle_odom.pose.pose.position);
+			const Eigen::Vector3d pos2 = 
+				helper::Point2vec3d(it2->vehicle_odom.pose.pose.position);
+
 			// Get distance magnitude and direction
-			Eigen::Vector3d dist_vec = 
-					helper::Point2vec3d(it1->vehicle_odom.pose.pose.position) - 
-					helper::Point2vec3d(it2->vehicle_odom.pose.pose.position);
+			Eigen::Vector3d dist_vec = pos1 - pos2;
 			double norm_dist = dist_vec.norm();
 
 			Eigen::Vector3d dist_direction;
@@ -177,6 +183,80 @@ void MediationLayer::UpdateVehicleReactionForces() {
 				dist_direction = dist_vec.normalized();
 			} else {
 				dist_direction = Eigen::Vector3d(0.0, 0.0, 0.0);
+			}
+
+			// Shield reaction ----------------------------------------
+			bool shield_active = false;
+			if(it1->has_shield) {
+				// Add shield reaction
+				const double yaw = it1->ml_reference.yaw;
+				Eigen::Vector3d plane_normal(cos(yaw), sin(yaw), 0.0);
+				Eigen::Vector3d plane_origin = pos1;
+				Eigen::Vector3d z_plane = z_axis;
+				Eigen::Vector3d y_plane = z_plane.cross(plane_normal);
+				double width = d_thresh_, height = d_thresh_;
+
+				Wall shield_plane(plane_origin, plane_normal, z_plane, y_plane,
+					              width, height);
+
+				// Get nearest point in the shield
+				double plane_dist;
+				shield_plane.DistancePoint2WallPlane(pos2, &plane_dist);
+				// ROS_INFO("Projection in wall: %d, distance: %f", inWall, plane_dist);
+				if(plane_dist > 0) {
+					// Wall reaction
+					if (norm_dist < d_thresh_) {
+						double force_magnitude;
+						if (norm_dist <= d_min_) {  // Avoid calculating negative forces
+							force_magnitude = f_max;
+						} else {
+							force_magnitude = k_force_*(d_thresh_-norm_dist)/(d_thresh_-d_min_);
+						}
+						force_magnitude = std::min(f_max, force_magnitude);
+						it1->force_field = it1->force_field - force_magnitude*shield_plane.plane_.normal_;
+						it2->force_field = it2->force_field + force_magnitude*shield_plane.plane_.normal_;
+						shield_active = true;
+					}
+				}
+			}
+
+			// See if other vehicle has shield (react to it)
+			if(it2->has_shield) {
+				// Add shield reaction
+				const double yaw = it2->ml_reference.yaw;
+				Eigen::Vector3d plane_normal(cos(yaw), sin(yaw), 0.0);
+				Eigen::Vector3d plane_origin = pos2;
+				Eigen::Vector3d z_plane = z_axis;
+				Eigen::Vector3d y_plane = z_plane.cross(plane_normal);
+				double width = d_thresh_, height = d_thresh_;
+
+				Wall shield_plane(plane_origin, plane_normal, z_plane, y_plane,
+					              width, height);
+
+				// Get nearest point in the shield
+				double plane_dist;
+				shield_plane.DistancePoint2WallPlane(pos2, &plane_dist);
+				// ROS_INFO("Projection in wall: %d, distance: %f", inWall, plane_dist);
+				if(plane_dist > 0) {
+					// Wall reaction
+					if (norm_dist < d_thresh_) {
+						double force_magnitude;
+						if (norm_dist <= d_min_) {  // Avoid calculating negative forces
+							force_magnitude = f_max;
+						} else {
+							force_magnitude = k_force_*(d_thresh_-norm_dist)/(norm_dist-d_min_);
+						}
+						force_magnitude = std::min(f_max, force_magnitude);
+						it1->force_field = it1->force_field + force_magnitude*shield_plane.plane_.normal_;
+						it2->force_field = it2->force_field - force_magnitude*shield_plane.plane_.normal_;
+						shield_active = true;
+					}
+				}
+			}
+
+			// Sphere reaction (only happens when there was no shield reaction)
+			if(shield_active) {
+				continue;
 			}
 
 			//Get reacting forces
@@ -188,14 +268,8 @@ void MediationLayer::UpdateVehicleReactionForces() {
 					force_magnitude = k_force_*(d_thresh_-norm_dist)/(norm_dist-d_min_);
 				}
 				force_magnitude = std::min(f_max, force_magnitude);
-
-				// Get perpendicular direction
-				Eigen::Vector3d dir_perp = (z_axis.cross(dist_direction)).normalized();
-
-				// std::cout << force_magnitude << std::endl;
 				it1->force_field = it1->force_field + force_magnitude*dist_direction;
-				                                    // + force_magnitude*dir_perp;
-				// it2->force_field = it2->force_field - force_magnitude*dist_direction;
+				it2->force_field = it2->force_field - force_magnitude*dist_direction;
 			}
 		}
 	}
