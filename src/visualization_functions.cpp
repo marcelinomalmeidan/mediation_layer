@@ -115,6 +115,42 @@ void PlaneMarker(const Eigen::Vector3d &point,
     markerArray->markers.push_back(marker);
 }
 
+void CuboidMarker(const Eigen::Vector3d &point,
+                  const std::string frame_id,
+                  const std::string &ns,  // namespace
+                  const double &length,
+                  const double &width,
+                  const double &height,
+                  const double &heading_direction,
+                  const std_msgs::ColorRGBA &color,
+                  const double &transparency,  // 0 -> transparent, 1 -> opaque
+                  const int &seqNumber,
+                  visualization_msgs::MarkerArray *markerArray) {
+    // Initialize array
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = frame_id;
+    marker.header.stamp = ros::Time::now();
+    marker.ns = ns;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.orientation.w = cos(heading_direction/2.0);
+    marker.pose.orientation.z = sin(heading_direction/2.0);
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.id = seqNumber;
+    marker.scale.x = length;
+    marker.scale.y = width;
+    marker.scale.z = height;
+    marker.color = color;
+    marker.color.a = transparency;
+
+    // Get markers
+	geometry_msgs::Point position;
+	position.x = point(0);
+	position.y = point(1);
+	position.z = point(2);
+	marker.pose.position = position;
+    markerArray->markers.push_back(marker);
+}
+
 void MeshMarker(const Eigen::Vector3d &point,
 	            const Eigen::Quaterniond &quat,
 	            const std::string &frame_id,

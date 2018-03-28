@@ -223,6 +223,7 @@ void VisualizationThread(const double &rate) {
     const std_msgs::ColorRGBA sphere_color = visualization_functions::Color::White();
     const std_msgs::ColorRGBA text_color = visualization_functions::Color::Black();
     const std_msgs::ColorRGBA force_color = visualization_functions::Color::Red();
+    const std_msgs::ColorRGBA shield_color = visualization_functions::Color::Teal();
     const double reference_transparency = 0.5;
     const double pos_transparency = 1.0;
     const double reference_size = 0.1;
@@ -295,9 +296,14 @@ void VisualizationThread(const double &rate) {
 
                 // Get shield plane marker
                 if(it->has_shield) {
-                    visualization_functions::PlaneMarker(position,
-                            frame_id, it->name, sphere_size, sphere_color,
-                            shield_transparency, 4, it->ml_reference.yaw, &quadArray);
+                    double len = 0.5*sphere_size, wid = sphere_size, height = sphere_size;
+                    Eigen::Vector3d x_dir(cos(it->ml_reference.yaw), sin(it->ml_reference.yaw), 0.0);
+                    visualization_functions::CuboidMarker(position + 0.5*len*x_dir,
+                        frame_id, it->name, len, wid, height, it->ml_reference.yaw,
+                        shield_color, shield_transparency, 4, &quadArray);
+                    // visualization_functions::PlaneMarker(position,
+                    //         frame_id, it->name, sphere_size, sphere_color,
+                    //         shield_transparency, 4, it->ml_reference.yaw, &quadArray);
                 }
 
                 // Get quad mesh
