@@ -10,12 +10,34 @@ int main(int argc, char** argv){
   ros::NodeHandle node("~");
   ROS_INFO("Mediation Layer started!");
 
-  // Get arena corners
+  // Get arena corners ---------------------------------------------
   std::vector<double> corner1, corner2;
   node.getParam("arena_corner1", corner1);
   node.getParam("arena_corner2", corner2);
   Eigen::Vector3d arena_corner1(corner1[0], corner1[1], corner1[2]);
   Eigen::Vector3d arena_corner2(corner2[0], corner2[1], corner2[2]);
+
+  // Get balloons --------------------------------------------------
+  std::vector<double> balloon_positions;
+  std::vector<std::string> balloon_colors;
+  node.getParam("BalloonPosition", balloon_positions);
+  node.getParam("BalloonColors", balloon_colors);
+  if (float(balloon_colors.size()) > float(balloon_positions.size())/3.0) {
+    ROS_ERROR("[mediation layer]: Balloon positions not well defined!");
+    return 0;
+  } else {
+    // Add balloons
+    for (uint i = 0; i < balloon_colors.size(); i++) {
+      std_msgs::ColorRGBA color;
+      visualization_functions::SelectColor(balloon_colors[i], &color);
+      Eigen::Vector3d pos(balloon_positions[3*i],
+                          balloon_positions[3*i + 1],
+                          balloon_positions[3*i + 2]);
+      globals_.balloons.push_back(Balloon(color, pos));
+      ROS_INFO("[mediation layer]: Added a %s balloon at position %f %f %f",
+                balloon_colors[i].c_str(), pos[0], pos[1], pos[2]);
+    }
+  }
 
   // Get parameters for the mediation layer ------------------------
   double max_acc, max_vel, d_thresh, d_min, k, kd, k_force;

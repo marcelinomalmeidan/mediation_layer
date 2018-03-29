@@ -30,6 +30,11 @@
     <rosparam param="arena_corner1"> [-10.0, -2.5, 0.0]</rosparam>
     <rosparam param="arena_corner2"> [10.0, 2.5, 4.0]</rosparam>
 
+    <!-- Balloons -->
+    <rosparam param="BalloonPosition"> [-7.5, 0.0, 2.0,
+                                         7.5, 0.0, 2.0] </rosparam>
+    <rosparam param="BalloonColors"> ["red", "blue"] </rosparam>
+
     <!-- Mediation layer integrator parameters -->
     <rosparam param="max_acceleration"> 6.0 </rosparam>
     <rosparam param="max_velocity"> 2.5 </rosparam>

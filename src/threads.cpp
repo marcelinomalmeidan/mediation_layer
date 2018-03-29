@@ -10,10 +10,13 @@ void MediationLayerThread(const double &rate) {
     // double rate = 300.0;  // Rate in Hz
     double dt = 1/rate;
     ros::Rate loop_rate(rate);
+    const double quad_radius = 0.25;
 
     // Run the Mediation Layer loop
     while (ros::ok()) {
+        std::vector<Eigen::Vector3d> quad_positions;
 
+        // Update mediation layer
         pthread_mutex_lock(&mutexes_.m_ml_class);
 
             // Reset reaction forces
@@ -31,7 +34,30 @@ void MediationLayerThread(const double &rate) {
             // Publish new references into ROS
             globals_.obj_mid_layer.PublishMLReferences();
 
+            // Get all quad positions
+            globals_.obj_mid_layer.GetQuadPositions(&quad_positions);
+
         pthread_mutex_unlock(&mutexes_.m_ml_class);
+
+        // Check whether balloons have popped
+        pthread_mutex_lock(&mutexes_.m_balloons);
+            for (uint i = 0; i < globals_.balloons.size(); i++) {
+                for (uint j = 0; j < quad_positions.size(); j++) {
+                    // We don't check if balloon is already popped
+                    if (globals_.balloons[i].is_popped()) {
+                        continue;
+                    }
+
+                    // If balloon isn't popped, we check proximity with quads
+                    const double dist = 
+                        (globals_.balloons[i].position_ - quad_positions[j]).norm();
+                    if (dist < quad_radius) {
+                        globals_.balloons[i].popped_ = true;
+                        ROS_INFO("[mediation layer]: Balloon popped!");
+                    }
+                }
+            }
+        pthread_mutex_unlock(&mutexes_.m_balloons);
 
         loop_rate.sleep();
     }
@@ -170,13 +196,20 @@ void StaticObjectsVisualizationThread() {
 
 	const std_msgs::ColorRGBA ground_color = visualization_functions::Color::DarkGreen();
 	const double gound_transparency = 1.0;
+    const std::string balloon_mesh = "balloon.stl";
+    const std::string balloon_ns = "balloons";
+    const double balloon_size = 20.0;
+    const double balloon_transparency = 1.0;
+    const Eigen::Vector3d balloon_offset(0.0, 0.0, -0.75);
+    const Eigen::Quaterniond balloon_att(1.0, 0.0, 0.0, 0.0);
     BoxPlanes arena_box;
+    std::vector<Balloon> balloons;
     ros::Publisher pub_vis;
 
 	// Visualization markers for the arena
     visualization_msgs::MarkerArray static_obj_markers;
 
-    const double rate = 1.0;  // Rate in Hz
+    const double rate = 2.0;  // Rate in Hz
     ros::Rate loop_rate(rate);
 
     while (ros::ok()) {
@@ -186,6 +219,9 @@ void StaticObjectsVisualizationThread() {
             pub_vis = globals_.obj_mid_layer.pub_vis_;
             arena_box = globals_.obj_mid_layer.arena_box_;
 	    pthread_mutex_unlock(&mutexes_.m_ml_class);
+        pthread_mutex_lock(&mutexes_.m_balloons);
+            balloons = globals_.balloons;
+        pthread_mutex_unlock(&mutexes_.m_balloons);
 
 	    // Get corners from arena
 	    Eigen::Vector3d corner1 = arena_box.DLB_;
@@ -198,6 +234,21 @@ void StaticObjectsVisualizationThread() {
                  gound_transparency, &static_obj_markers);
 
 	    arena_box.VisualizeBox(frame_id, &static_obj_markers);
+
+        // Get balloon markers
+        for (uint i = 0; i < balloons.size(); i++) {
+            if (balloons[i].is_popped()) {  // Transparent balloon marker
+                const double transparent = 0.0;
+                visualization_functions::MeshMarker(balloons[i].position_+balloon_offset,
+                    balloon_att, frame_id, balloon_ns, balloon_mesh, balloon_size,
+                    balloons[i].color_, transparent, i, &static_obj_markers);
+            } else {
+                visualization_functions::MeshMarker(balloons[i].position_+balloon_offset,
+                    balloon_att, frame_id, balloon_ns, balloon_mesh, balloon_size,
+                    balloons[i].color_, balloon_transparency, i, &static_obj_markers);
+            }
+        }
+
 
 	    pub_vis.publish(static_obj_markers);
 
@@ -216,6 +267,7 @@ void VisualizationThread(const double &rate) {
 
     // Visualization marker parameters
     const std::string frame_id = "world";
+    const std::string quad_mesh = "quadrotor_base.dae";
     const double quad_size = 0.375;
     const double sphere_transparency = 0.1;
     const double shield_transparency = 0.25;
@@ -270,7 +322,7 @@ void VisualizationThread(const double &rate) {
 
                 // Get quad mesh
                 visualization_functions::MeshMarker(ml_ref_pos, orientationMesh,
-                            frame_id, it->name, quad_size, it->color, 
+                            frame_id, it->name, quad_mesh, quad_size, it->color, 
                             reference_transparency, 1, &quadArray);
 
                 visualization_functions::NameMarker(ml_ref_pos, it->name,
@@ -308,7 +360,7 @@ void VisualizationThread(const double &rate) {
 
                 // Get quad mesh
                 visualization_functions::MeshMarker(position, q_mesh,
-                            frame_id, it->name, quad_size, it->color, 
+                            frame_id, it->name, quad_mesh, quad_size, it->color, 
                             pos_transparency, 5, &quadArray);
 
                 // Get force arrow around quad

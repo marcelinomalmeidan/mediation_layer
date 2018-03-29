@@ -5,6 +5,7 @@
 
 // Defined libraries
 #include "mediation_layer/ml_class.h"
+#include "mediation_layer/balloon_class.h"
 #include "mediation_layer/threads.h"
 #include "mediation_layer/callbacks.h"
 #include "mediation_layer/helper.h"

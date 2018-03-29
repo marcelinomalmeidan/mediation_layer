@@ -87,6 +87,7 @@ class MediationLayer {
     void UpdateArenaReactionForces();
     void UpdateMediationLayerOutputs(const double &dt);
     void PublishMLReferences();
+    void GetQuadPositions(std::vector<Eigen::Vector3d> *quad_positions);
     void VisualizeArena();
 
  private:

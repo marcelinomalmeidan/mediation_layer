@@ -80,6 +80,7 @@ void MeshMarker(const Eigen::Vector3d &point,
                 const Eigen::Quaterniond &quat,
                 const std::string &frame_id,
                 const std::string &ns,  // namespace
+                const std::string &mesh_file,
                 const double &size,
                 const std_msgs::ColorRGBA &color,
                 const double &transparency,  // 0 -> transparent, 1 -> opaque

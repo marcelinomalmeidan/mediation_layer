@@ -178,12 +178,18 @@ void MediationLayer::UpdateVehicleReactionForces() {
 			Eigen::Vector3d dist_vec = pos1 - pos2;
 			double norm_dist = dist_vec.norm();
 
-			Eigen::Vector3d dist_direction;
-			if(norm_dist > epsilon){
-				dist_direction = dist_vec.normalized();
-			} else {
-				dist_direction = Eigen::Vector3d(0.0, 0.0, 0.0);
+			if (norm_dist > d_thresh_) {
+				continue;  // Quads too far appart to interact
 			}
+
+			// Calculate magnitude of reacting force
+			double force_magnitude;
+			if (norm_dist <= d_min_) {  // Avoid calculating negative forces
+				force_magnitude = f_max;
+			} else {
+				force_magnitude = k_force_*(d_thresh_-norm_dist)/(d_thresh_-d_min_);
+			}
+			force_magnitude = std::min(f_max, force_magnitude);
 
 			// Shield reaction ----------------------------------------
 			bool shield_active = false;
@@ -203,20 +209,11 @@ void MediationLayer::UpdateVehicleReactionForces() {
 				double plane_dist;
 				shield_plane.DistancePoint2WallPlane(pos2, &plane_dist);
 				// ROS_INFO("Projection in wall: %d, distance: %f", inWall, plane_dist);
-				if(plane_dist > 0) {
+				if(plane_dist > 0) {  // If in front of shield
 					// Wall reaction
-					if (norm_dist < d_thresh_) {
-						double force_magnitude;
-						if (norm_dist <= d_min_) {  // Avoid calculating negative forces
-							force_magnitude = f_max;
-						} else {
-							force_magnitude = k_force_*(d_thresh_-norm_dist)/(d_thresh_-d_min_);
-						}
-						force_magnitude = std::min(f_max, force_magnitude);
-						it1->force_field = it1->force_field - force_magnitude*shield_plane.plane_.normal_;
-						it2->force_field = it2->force_field + force_magnitude*shield_plane.plane_.normal_;
-						shield_active = true;
-					}
+					it1->force_field = it1->force_field - force_magnitude*shield_plane.plane_.normal_;
+					it2->force_field = it2->force_field + force_magnitude*shield_plane.plane_.normal_;
+					shield_active = true;
 				}
 			}
 
@@ -236,41 +233,32 @@ void MediationLayer::UpdateVehicleReactionForces() {
 				// Get nearest point in the shield
 				double plane_dist;
 				shield_plane.DistancePoint2WallPlane(pos2, &plane_dist);
-				// ROS_INFO("Projection in wall: %d, distance: %f", inWall, plane_dist);
-				if(plane_dist > 0) {
+				if(plane_dist > 0) {  // If in front of shield
 					// Wall reaction
-					if (norm_dist < d_thresh_) {
-						double force_magnitude;
-						if (norm_dist <= d_min_) {  // Avoid calculating negative forces
-							force_magnitude = f_max;
-						} else {
-							force_magnitude = k_force_*(d_thresh_-norm_dist)/(norm_dist-d_min_);
-						}
-						force_magnitude = std::min(f_max, force_magnitude);
-						it1->force_field = it1->force_field + force_magnitude*shield_plane.plane_.normal_;
-						it2->force_field = it2->force_field - force_magnitude*shield_plane.plane_.normal_;
-						shield_active = true;
-					}
+					it1->force_field = it1->force_field + force_magnitude*shield_plane.plane_.normal_;
+					it2->force_field = it2->force_field - force_magnitude*shield_plane.plane_.normal_;
+					shield_active = true;
 				}
 			}
 
+
+			// Calculate sphere reaction ---------------------------------------------
 			// Sphere reaction (only happens when there was no shield reaction)
 			if(shield_active) {
 				continue;
 			}
 
-			//Get reacting forces
-			if (norm_dist < d_thresh_) {
-				double force_magnitude;
-				if (norm_dist <= d_min_) {  // Avoid calculating negative forces
-					force_magnitude = f_max;
-				} else {
-					force_magnitude = k_force_*(d_thresh_-norm_dist)/(norm_dist-d_min_);
-				}
-				force_magnitude = std::min(f_max, force_magnitude);
-				it1->force_field = it1->force_field + force_magnitude*dist_direction;
-				it2->force_field = it2->force_field - force_magnitude*dist_direction;
+			// Get direction of force
+			Eigen::Vector3d dist_direction;
+			if(norm_dist > epsilon){
+				dist_direction = dist_vec.normalized();
+			} else {
+				dist_direction = Eigen::Vector3d(0.0, 0.0, 0.0);
 			}
+
+			//Get reacting forces
+			it1->force_field = it1->force_field + force_magnitude*dist_direction;
+			it2->force_field = it2->force_field - force_magnitude*dist_direction;
 		}
 	}
 }
@@ -352,6 +340,16 @@ void MediationLayer::PublishMLReferences() {
 	for(it = quads_.begin(); it != quads_.end(); ++it) {
 		if(it->ref_is_active) {
 			it->pub_mediation_layer.publish(it->ml_reference);	
+		}
+	}
+}
+
+void MediationLayer::GetQuadPositions(std::vector<Eigen::Vector3d> *quad_positions) {
+	std::set<QuadData>::iterator it;
+	for(it = quads_.begin(); it != quads_.end(); ++it) {
+		if(it->ref_is_active) {
+			Eigen::Vector3d pos(helper::Point2vec3d(it->ml_reference.Pos));
+			quad_positions->push_back(pos);
 		}
 	}
 }
