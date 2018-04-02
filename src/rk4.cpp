@@ -117,11 +117,11 @@ void rk4::DifferentialEquation(const Eigen::Vector3d &F,
 	// will reduce the velocity (or rotate it)
 	if(y_dot.norm() >= max_vel_) {
 		// Project acceleration into velocity
-		const double projection = y_ddot.dot(y_dot);
+		const double projection = y_ddot.dot(y_dot.normalized());
 
 		// If projection is positive, we only allow y_ddot to rotate velocity
 		if(projection > 0) {
-			y_ddot = y_ddot - projection*y_ddot;  // Remove the component along vel
+			y_ddot = y_ddot - projection*y_dot.normalized();  // Remove the component along vel
 		}
 	}
 

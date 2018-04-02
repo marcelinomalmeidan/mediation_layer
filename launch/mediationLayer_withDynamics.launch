@@ -16,15 +16,15 @@
     <!-- List of colors for the quads -->
     <!-- Possible colors: red, blue, green, yellow, orange, purple, chartreuse, teal, pink -->
     <!-- You can also choose "any" -->
-    <rosparam param="ColorList"> ["red",
+    <rosparam param="ColorList"> ["blue",
                                   "blue",
-                                  "any",
-                                  "yellow",
-                                  "orange",
-                                  "purple"] </rosparam>
+                                  "blue",
+                                  "red",
+                                  "red",
+                                  "red"] </rosparam>
 
     <!-- Define which quads have shield -->
-    <rosparam param="HasShield"> [0, 0, 0, 0, 0, 0] </rosparam>
+    <rosparam param="HasShield"> [1, 0, 0, 1, 0, 0] </rosparam>
 
     <!-- Set opposite corners of the arena -->
     <rosparam param="arena_corner1"> [-10.0, -2.5, 0.0]</rosparam>
