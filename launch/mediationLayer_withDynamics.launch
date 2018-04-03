@@ -36,8 +36,8 @@
     <rosparam param="BalloonColors"> ["red", "blue"] </rosparam>
 
     <!-- Mediation layer integrator parameters -->
-    <rosparam param="max_acceleration"> 6.0 </rosparam>
-    <rosparam param="max_velocity"> 2.5 </rosparam>
+    <rosparam param="max_acceleration"> 90.0 </rosparam>
+    <rosparam param="max_velocity"> 3.0 </rosparam>
     <rosparam param="dist_threshold"> 1.0 </rosparam> <!-- Distance at which one quad influences another -->
     <rosparam param="dist_minimum"> 0.5 </rosparam> <!-- Minimum allowed distance between quads -->
     <rosparam param="k"> 4.0 </rosparam> <!-- Integrator proportional gain -->

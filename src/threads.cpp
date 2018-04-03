@@ -280,6 +280,7 @@ void VisualizationThread(const double &rate) {
     const double reference_transparency = 0.5;
     const double pos_transparency = 1.0;
     const double reference_size = 0.1;
+    const double max_force_marker_length = 10.0;
     visualization_msgs::MarkerArray quadArray;
     std::set<QuadData> quad_list;
     ros::Publisher pub_vis;
@@ -301,7 +302,6 @@ void VisualizationThread(const double &rate) {
         pthread_mutex_lock(&mutexes_.m_ml_class);
             quad_list = globals_.obj_mid_layer.quads_;
             pub_vis = globals_.obj_mid_layer.pub_vis_;
-            max_acc = globals_.obj_mid_layer.max_acc_;
         pthread_mutex_unlock(&mutexes_.m_ml_class);
 
         std::set<QuadData>::iterator it;
@@ -366,7 +366,7 @@ void VisualizationThread(const double &rate) {
 
                 // Get force arrow around quad
                 visualization_functions::ForceMarker(position, 
-                            it->force_field, max_acc, frame_id, 
+                            it->force_field, max_force_marker_length, frame_id, 
                             it->name, force_color, 6, &quadArray);
 
                 visualization_functions::NameMarker(position, it->name,

@@ -190,7 +190,7 @@ void MeshMarker(const Eigen::Vector3d &point,
 
 void ForceMarker(const Eigen::Vector3d &point,
 				 const Eigen::Vector3d &force,
-                 const double &max_accel,
+                 const double &max_length,
                  const std::string &frame_id,
                  const std::string &ns,  // namespace
                  const std_msgs::ColorRGBA &color,
@@ -213,7 +213,7 @@ void ForceMarker(const Eigen::Vector3d &point,
 	} else {
 		Eigen::Vector3d direction = force.normalized();
 		Eigen::Vector3d force_new = 
-						std::min(force_norm, max_accel)*direction;
+						std::min(force_norm, max_length)*direction;
 		pf = p0 + 0.1*force_new;
 
 		// Set arrow parameters
