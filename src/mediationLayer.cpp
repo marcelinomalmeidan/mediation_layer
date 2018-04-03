@@ -33,7 +33,7 @@ int main(int argc, char** argv){
       Eigen::Vector3d pos(balloon_positions[3*i],
                           balloon_positions[3*i + 1],
                           balloon_positions[3*i + 2]);
-      globals_.balloons.push_back(Balloon(color, pos));
+      globals_.balloons.push_back(Balloon(balloon_colors[i], color, pos));
       ROS_INFO("[mediation layer]: Added a %s balloon at position %f %f %f",
                 balloon_colors[i].c_str(), pos[0], pos[1], pos[2]);
     }

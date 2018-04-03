@@ -53,7 +53,8 @@ void MediationLayerThread(const double &rate) {
                         (globals_.balloons[i].position_ - quad_positions[j]).norm();
                     if (dist < quad_radius) {
                         globals_.balloons[i].popped_ = true;
-                        ROS_INFO("[mediation layer]: Balloon popped!");
+                        ROS_INFO("[mediation layer]: %s balloon popped!", 
+                                 globals_.balloons[i].name_.c_str());
                     }
                 }
             }
