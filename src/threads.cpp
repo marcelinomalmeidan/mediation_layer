@@ -41,23 +41,7 @@ void MediationLayerThread(const double &rate) {
 
         // Check whether balloons have popped
         pthread_mutex_lock(&mutexes_.m_balloons);
-            for (uint i = 0; i < globals_.balloons.size(); i++) {
-                for (uint j = 0; j < quad_positions.size(); j++) {
-                    // We don't check if balloon is already popped
-                    if (globals_.balloons[i].is_popped()) {
-                        continue;
-                    }
-
-                    // If balloon isn't popped, we check proximity with quads
-                    const double dist = 
-                        (globals_.balloons[i].position_ - quad_positions[j]).norm();
-                    if (dist < quad_radius) {
-                        globals_.balloons[i].popped_ = true;
-                        ROS_INFO("[mediation layer]: %s balloon popped!", 
-                                 globals_.balloons[i].name_.c_str());
-                    }
-                }
-            }
+            globals_.balloons.PopBalloons(quad_positions);
         pthread_mutex_unlock(&mutexes_.m_balloons);
 
         loop_rate.sleep();
@@ -80,8 +64,13 @@ void HeartbeatThread() {
         ros::Time time_now = ros::Time::now();
         
         std::set<QuadData>::iterator it;
+        bool all_ref_inactive = true;
         for(it = globals_.obj_mid_layer.quads_.begin(); 
             it != globals_.obj_mid_layer.quads_.end(); ++it) {
+
+            if(it->ref_is_active) {
+                all_ref_inactive = false;
+            }
 
             ros::Time last_ref = it->last_reference_stamp;
             if (it->ref_is_active && (time_now - last_ref).toSec() > timeout) {
@@ -94,6 +83,13 @@ void HeartbeatThread() {
                 it->odom_is_active = false;
                 ROS_WARN("[mediation layer] Quad %s odometry inactive!", it->name.c_str());
             }
+        }
+
+        // If all ref inactive, restart balloons
+        if(all_ref_inactive) {
+            pthread_mutex_lock(&mutexes_.m_balloons);
+                globals_.balloons.ResetBalloons();
+            pthread_mutex_unlock(&mutexes_.m_balloons);
         }
 
         pthread_mutex_unlock(&mutexes_.m_ml_class);
@@ -204,7 +200,7 @@ void StaticObjectsVisualizationThread() {
     const Eigen::Vector3d balloon_offset(0.0, 0.0, -0.75);
     const Eigen::Quaterniond balloon_att(1.0, 0.0, 0.0, 0.0);
     BoxPlanes arena_box;
-    std::vector<Balloon> balloons;
+    BalloonSet balloons;
     ros::Publisher pub_vis;
 
 	// Visualization markers for the arena
@@ -237,16 +233,16 @@ void StaticObjectsVisualizationThread() {
 	    arena_box.VisualizeBox(frame_id, &static_obj_markers);
 
         // Get balloon markers
-        for (uint i = 0; i < balloons.size(); i++) {
-            if (balloons[i].is_popped()) {  // Transparent balloon marker
+        for (uint i = 0; i < balloons.balloons_.size(); i++) {
+            if (balloons.balloons_[i].is_popped()) {  // Transparent balloon marker
                 const double transparent = 0.0;
-                visualization_functions::MeshMarker(balloons[i].position_+balloon_offset,
+                visualization_functions::MeshMarker(balloons.balloons_[i].position_+balloon_offset,
                     balloon_att, frame_id, balloon_ns, balloon_mesh, balloon_size,
-                    balloons[i].color_, transparent, i, &static_obj_markers);
+                    balloons.balloons_[i].color_, transparent, i, &static_obj_markers);
             } else {
-                visualization_functions::MeshMarker(balloons[i].position_+balloon_offset,
+                visualization_functions::MeshMarker(balloons.balloons_[i].position_+balloon_offset,
                     balloon_att, frame_id, balloon_ns, balloon_mesh, balloon_size,
-                    balloons[i].color_, balloon_transparency, i, &static_obj_markers);
+                    balloons.balloons_[i].color_, balloon_transparency, i, &static_obj_markers);
             }
         }
 

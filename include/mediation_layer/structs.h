@@ -7,7 +7,7 @@
 struct globalVariables {
     // Mutex protected variables
     MediationLayer obj_mid_layer;
-    std::vector<Balloon> balloons;
+    BalloonSet balloons;
 };
 
 class mutexStruct {
