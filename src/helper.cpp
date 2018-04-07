@@ -42,6 +42,19 @@ float normVector3(geometry_msgs::Vector3 Vec3){
 	return norm;
 }
 
+geometry_msgs::Vector3 SaturateVector3(geometry_msgs::Vector3 Vec3,
+	                                   float max_norm) {
+	geometry_msgs::Vector3 Vec_out = Vec3;
+	float norm = normVector3(Vec3);
+	float max_norm_positive = std::fabs(max_norm);
+	if(norm > max_norm_positive) {
+		Vec_out.x = max_norm_positive*Vec3.x/norm;
+		Vec_out.y = max_norm_positive*Vec3.y/norm;
+		Vec_out.z = max_norm_positive*Vec3.z/norm;
+	}
+	return Vec_out;
+}
+
 geometry_msgs::Point Vec3_2_Point(geometry_msgs::Vector3 Vec3){
 	geometry_msgs::Point Pt;
 	Pt.x = Vec3.x;

@@ -29,6 +29,10 @@ geometry_msgs::Vector3 ZeroVector3();
 //Function to calculate the 2-norm of a ROS Vector3
 float normVector3(geometry_msgs::Vector3 Vec3);
 
+// Saturate a vector by an upper bound on its norm
+geometry_msgs::Vector3 SaturateVector3(geometry_msgs::Vector3 Vec3,
+	                                   float max_norm);
+
 //Function to copy a ROS Vector3 into a ROS Point structure
 geometry_msgs::Point Vec3_2_Point(geometry_msgs::Vector3 Vec3);
 

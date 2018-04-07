@@ -45,8 +45,10 @@ class MediationLayer {
  	uint n_quads_;
     ros::Publisher pub_vis_;        // Publisher for visualization
     ros::Publisher pub_game_state_; // Publisher for game state
-    double max_acc_ = 6.0;
-    double max_vel_ = 2.5;
+    double max_acc_ = 6.0;          // Maximum integrator acceleration
+    double max_vel_ = 2.5;          // Maximum integrator velocity
+    double max_in_acc_ = 2.5;       // Maximum input acceleration
+    double max_in_vel_ = 6.0;       // Maximum input velocity
     double d_thresh_ = 1.0;   // Distance at which one quad influences another
     double d_min_ = 0.50;     // Minimum distance allowed (infinite repulsion)
     double k_ = 4.0;          // Proportional gain in the error integrator
@@ -61,6 +63,8 @@ class MediationLayer {
                    const Eigen::Vector3d &arena_corner2,
                    const double &max_acc,
                    const double &max_vel,
+                   const double &max_in_acc,
+                   const double &max_in_vel,
                    const double &d_thresh,
                    const double &d_min,
                    const double &k,

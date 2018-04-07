@@ -12,6 +12,8 @@ MediationLayer::MediationLayer(const std::string &visualization_topic,
 			                   const Eigen::Vector3d &arena_corner2,
 			                   const double &max_acc,
 			                   const double &max_vel,
+			                   const double &max_in_acc,
+			                   const double &max_in_vel,
 			                   const double &d_thresh,
 			                   const double &d_min,
 			                   const double &k,
@@ -20,6 +22,8 @@ MediationLayer::MediationLayer(const std::string &visualization_topic,
 	                           ros::NodeHandle *nh) {
 	max_acc_ = max_acc;
 	max_vel_ = max_vel;
+	max_in_acc_ = max_in_acc;
+	max_in_vel_ = max_in_vel;
 	d_thresh_ = d_thresh;
 	d_min_ = d_min;
 	k_ = k;
@@ -99,6 +103,8 @@ void MediationLayer::UpdateQuadReference(const std::string &name,
 	this->FindQuadIndex(name, &it);
 	if (it != quads_.end()) {
 		it->reference = reference;
+		it->reference.Vel = helper::SaturateVector3(it->reference.Vel, max_in_vel_);
+		it->reference.Acc = helper::SaturateVector3(it->reference.Acc, max_in_acc_);
 		it->last_reference_stamp = ros::Time::now();
 		
 		// If it is inactive, set it to active

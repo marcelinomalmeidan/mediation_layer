@@ -40,9 +40,12 @@ int main(int argc, char** argv){
   }
 
   // Get parameters for the mediation layer ------------------------
-  double max_acc, max_vel, d_thresh, d_min, k, kd, k_force;
+  double max_acc, max_vel, max_in_acc, max_in_vel, 
+         d_thresh, d_min, k, kd, k_force;
   node.getParam("max_acceleration", max_acc);
   node.getParam("max_velocity", max_vel);
+  node.getParam("max_input_acceleration", max_in_acc);
+  node.getParam("max_input_velocity", max_in_vel);
   node.getParam("dist_threshold", d_thresh);
   node.getParam("dist_minimum", d_min);
   node.getParam("k", k);
@@ -65,7 +68,8 @@ int main(int argc, char** argv){
   globals_.obj_mid_layer = 
   		MediationLayer(visualization_topic, game_state_topic,
                      arena_corner1, arena_corner2, max_acc, max_vel, 
-  	                 d_thresh, d_min, k, kd, k_force, &node);
+  	                  max_in_acc, max_in_vel, d_thresh, d_min,
+                      k, kd, k_force, &node);
 
   // Get all quad names, colors and shields -------------------------
   std::vector<std::string> quad_names, quad_colors;
