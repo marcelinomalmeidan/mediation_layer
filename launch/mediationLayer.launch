@@ -50,6 +50,10 @@
     <rosparam param="game_state_update_rate"> 30.0 </rosparam> <!-- game state -->
     <rosparam param="tf_update_rate"> 60.0 </rosparam> <!--tf publisher -->
 
+    <!-- Set maximum bounds for input velocity and accelerations -->
+    <rosparam param="max_input_acceleration"> 3.0 </rosparam>
+    <rosparam param="max_input_velocity"> 2.5 </rosparam>
+
     <!-- Set Input/Output Topics -->
     <param name="input_ref_topic" value="/px4_control/PVA_Ref"/>
     <param name="input_odom_topic" value="/local_odom"/>
