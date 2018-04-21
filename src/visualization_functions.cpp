@@ -141,6 +141,7 @@ void CuboidMarker(const Eigen::Vector3d &point,
     marker.scale.z = height;
     marker.color = color;
     marker.color.a = transparency;
+	marker.lifetime = ros::Duration(1.0);
 
     // Get markers
 	geometry_msgs::Point position;

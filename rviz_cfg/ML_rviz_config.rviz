@@ -9,7 +9,7 @@ Panels:
         - /Grid1
         - /MarkerArray1/Namespaces1
       Splitter Ratio: 0.472222209
-    Tree Height: 522
+    Tree Height: 375
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -55,8 +55,15 @@ Visualization Manager:
       Marker Topic: /mediation_layer/Visualization
       Name: MarkerArray
       Namespaces:
+        balloons: true
         box/arena: true
         ground: true
+        harry: true
+        hermione: true
+        hippogryph: true
+        phoenix: true
+        ron: true
+        valkyrie: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -84,25 +91,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.6840553
+      Distance: 20.7898655
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.66151309
-        Y: 0.494660914
-        Z: 2.40082288
+        X: 2.61589646
+        Y: -2.9838593
+        Z: 0.43678683
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.514799118
+      Pitch: 0.434799314
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.64505196
+      Yaw: 2.54505277
     Saved: ~
 Window Geometry:
   Displays:
@@ -120,5 +127,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 638
-  X: 1
-  Y: 31
+  X: 9
+  Y: 62
