@@ -12,6 +12,7 @@ bool SetShield(mg_msgs::SetQuadBool::Request  &req,
 		it->has_shield = req.set_bool;
 	pthread_mutex_unlock(&mutexes_.m_ml_class);
 	res.success = true;
+	ROS_INFO("Toggling shield for quad %s", req.quad_name.c_str());
 	// res.message = "Quad " + quad_name + " shield is set to " + std::to_string(req.data);
 
 	return true;
