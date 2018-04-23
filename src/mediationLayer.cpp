@@ -18,6 +18,8 @@ int main(int argc, char** argv){
   Eigen::Vector3d arena_corner2(corner2[0], corner2[1], corner2[2]);
 
   // Get balloons --------------------------------------------------
+  double pop_distance = 0.25;
+  globals_.balloons = BalloonSet(pop_distance, &node);
   std::vector<double> balloon_positions;
   std::vector<std::string> balloon_colors;
   node.getParam("BalloonPosition", balloon_positions);

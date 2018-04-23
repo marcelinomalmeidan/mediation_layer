@@ -2,6 +2,7 @@
 #define BALLOON_H_
 
 #include <Eigen/Dense>
+#include "std_msgs/Header.h"
 
 
 class Balloon {
@@ -32,11 +33,17 @@ class BalloonSet {
     std::vector<Balloon> balloons_;
     double pop_distance_ = 0.25;     // Minimum distance to pop a balloon
     bool all_unpopped_ = true;
+    ros::NodeHandle *nh_;
+    ros::Publisher pub_balloon_pop_;
 
     BalloonSet() {};
 
-    BalloonSet(const double &pop_distance) {
+    BalloonSet(const double &pop_distance,
+               ros::NodeHandle *nh) {
         pop_distance_ = pop_distance;
+        nh_ = nh;
+        pub_balloon_pop_= nh_->advertise
+            <std_msgs::Header>("/mediation_layer/balloon_pop", 1);
     }
 
     void AddBalloon(const std::string name,
@@ -63,6 +70,10 @@ class BalloonSet {
                     all_unpopped_ = false;
                     ROS_INFO("[mediation layer]: %s balloon popped!", 
                              balloons_[i].name_.c_str());
+                    std_msgs::Header balloon_color_msg;
+                    balloon_color_msg.frame_id = balloons_[i].name_;
+                    balloon_color_msg.stamp = ros::Time::now();
+                    pub_balloon_pop_.publish(balloon_color_msg);
                 }
             }
         }
