@@ -117,6 +117,10 @@ int main(int argc, char** argv){
     	(sub_topic_name, 10, boost::bind(callbacks::OdomCallback, _1, quad_names[i])));
   }
 
+  // Services ------------------------------------------
+  ros::ServiceServer shield_srv = node.advertiseService
+       ("/mediation_layer/set_quad_shield", services::SetShield);
+
   // Threads -------------------------------------------
   std::thread h_mediation_layer_thread, h_visualization_thread;
   std::thread h_static_visualization_thread, h_heartbeat_thread;

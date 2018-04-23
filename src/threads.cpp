@@ -56,7 +56,7 @@ void HeartbeatThread() {
     ros::Rate loop_rate(rate);
 
     // Timeout for heartbeats
-    const double timeout = 2.0;
+    const double timeout = 1.0;
 
     while (ros::ok()) {
         pthread_mutex_lock(&mutexes_.m_ml_class);

@@ -8,6 +8,7 @@
 #include "mediation_layer/balloon_class.h"
 #include "mediation_layer/threads.h"
 #include "mediation_layer/callbacks.h"
+#include "mediation_layer/services.h"
 #include "mediation_layer/helper.h"
 
 // Structs for global variables
@@ -18,6 +19,10 @@
 #include "nav_msgs/Odometry.h"
 #include "mg_msgs/PVA.h"
 #include "mg_msgs/GameState.h"
+#include "mg_msgs/SetQuadBool.h"
+
+// ROS Service types
+#include "std_srvs/SetBool.h"
 
 
 // Declare global variables
