@@ -57,21 +57,25 @@ int main(int argc, char** argv){
   // Get thread parameters ------------------------------------------
   double mediation_layer_rate, rviz_update_rate, 
          game_state_update_rate, tf_update_rate;
-  std::string visualization_topic, game_state_topic;
+  std::string visualization_topic, game_state_topic, game_start_topic;
   node.getParam("mediation_layer_rate", mediation_layer_rate);
   node.getParam("rviz_update_rate", rviz_update_rate);
   node.getParam("game_state_update_rate", game_state_update_rate);
   node.getParam("tf_update_rate", tf_update_rate);
   node.getParam("visualization_topic", visualization_topic);
   node.getParam("game_state_topic", game_state_topic);
+  node.getParam("game_start_topic", game_start_topic);
   
 
   // Initialize the Mediation Layer object --------------------------
   globals_.obj_mid_layer = 
-  		MediationLayer(visualization_topic, game_state_topic,
+  		MediationLayer(visualization_topic, game_state_topic, game_start_topic,
                      arena_corner1, arena_corner2, max_acc, max_vel, 
   	                  max_in_acc, max_in_vel, d_thresh, d_min,
                       k, kd, k_force, &node);
+
+  // Add cylindrical obstacles to the mediation layer
+  globals_.obj_mid_layer.AddBalloonRodObstacles(globals_.balloons);
 
   // Get all quad names, colors and shields -------------------------
   std::vector<std::string> quad_names, quad_colors;
@@ -122,6 +126,10 @@ int main(int argc, char** argv){
   // Services ------------------------------------------
   ros::ServiceServer shield_srv = node.advertiseService
        ("/mediation_layer/set_quad_shield", services::SetShield);
+  ros::ServiceServer ready_srv = node.advertiseService
+       ("/mediation_layer/set_quad_ready", services::ReadyForGame);
+  ros::ServiceServer takeoff_land_srv = node.advertiseService
+       ("/mediation_layer/request_to_land_quad", services::SetTakeOffLanding);
 
   // Threads -------------------------------------------
   std::thread h_mediation_layer_thread, h_visualization_thread;

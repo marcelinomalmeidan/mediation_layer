@@ -23,8 +23,12 @@ class Balloon {
         popped_ = false;
     }
 
-    bool is_popped() {
+    bool is_popped() const {
         return popped_;
+    }
+
+    Eigen::Vector3d GetBalloonPosition() const {
+        return position_;
     }
 };
 
@@ -87,6 +91,12 @@ class BalloonSet {
                 all_unpopped_ = true;
                 ROS_INFO("[mediation layer]: Balloons were healed!");
             }
+        }
+    }
+
+    void GetBalloonPositions(std::vector<Eigen::Vector3d> *positions) const {
+        for (uint i = 0; i < balloons_.size(); i++) {
+            positions->push_back(balloons_[i].GetBalloonPosition());
         }
     }
 };

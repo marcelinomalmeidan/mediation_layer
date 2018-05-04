@@ -8,6 +8,7 @@ MediationLayer::MediationLayer() {
 
 MediationLayer::MediationLayer(const std::string &visualization_topic,
 							   const std::string &game_state_topic,
+                               const std::string &game_start_topic,
 			                   const Eigen::Vector3d &arena_corner1,
 			                   const Eigen::Vector3d &arena_corner2,
 			                   const double &max_acc,
@@ -33,6 +34,7 @@ MediationLayer::MediationLayer(const std::string &visualization_topic,
 	pub_vis_ = nh->advertise
 		<visualization_msgs::MarkerArray>(visualization_topic, 1);	
 	pub_game_state_ = nh->advertise<mg_msgs::GameState>(game_state_topic, 1);
+	pub_start_game_ = nh->advertise<std_msgs::Empty>(game_start_topic, 1);
 	std::string arena_name = "arena";
 	arena_box_ = BoxPlanes(arena_corner1, arena_corner2, arena_name);
 }
@@ -75,18 +77,51 @@ void MediationLayer::AddQuad(const std::string &quad_name,
 		new_quad.has_shield = has_shield;
 		new_quad.ref_is_active = false;
 		new_quad.odom_is_active = false;
+		new_quad.is_takeoff_landing = true;
 		new_quad.last_reference_stamp = ros::Time::now();
 		new_quad.last_measurement_stamp = ros::Time::now();
-		new_quad.error_integrator = rk4(k_, kd_, max_vel_, max_acc_);
+		new_quad.error_integrator = rk4(k_, kd_, max_vel_, max_acc_, max_in_acc_);
 		new_quad.nh = *nh;
 		new_quad.pub_mediation_layer = new_quad.nh.advertise<mg_msgs::PVA>(output_topic, 1);
 		if(quad_color.compare("any") == 0) {
 			visualization_functions::SelectColor(n_quads_, &new_quad.color);
-		}else {
+		} else {
 			visualization_functions::SelectColor(quad_color, &new_quad.color);
 		}
 		quads_.insert(new_quad);
 		n_quads_ = n_quads_ + 1;
+	}
+}
+
+bool MediationLayer::AreAllQuadsReady() {
+    std::set<QuadData>::iterator it;
+    for(it = quads_.begin(); it != quads_.end(); ++it) {
+    	if(it->is_takeoff_landing) {
+    		return false;
+    	}
+    }
+    return true;
+}
+
+void MediationLayer::TriggerGameStart() {
+    std_msgs::Empty empty_msg;
+    pub_start_game_.publish(empty_msg);
+}
+
+
+void MediationLayer::AddBalloonRodObstacles(const BalloonSet &balloon_set) {
+	std::vector<Eigen::Vector3d> balloon_positions;
+	balloon_set.GetBalloonPositions(&balloon_positions);
+	
+	// Set the obstacles for the balloon rods
+	const double height = 1.2;
+	const double radius = d_thresh_/2.0;
+	for (uint i = 0; i < balloon_positions.size(); i++) {
+		// Rod has a height of 1.2m
+		Eigen::Vector3d center(balloon_positions[i][0],
+			                   balloon_positions[i][1],
+			                   0.6);
+		cylindrical_obstacles_.AddObstacle(center, height, radius);
 	}
 }
 
@@ -269,7 +304,7 @@ void MediationLayer::UpdateVehicleReactionForces() {
 	}
 }
 
-void MediationLayer::UpdateArenaReactionForces() {
+void MediationLayer::UpdateFixedObstaclesReactionForces() {
 
 	// static double k_force = 3;
     static double f_max = 1000.0;
@@ -281,12 +316,23 @@ void MediationLayer::UpdateArenaReactionForces() {
 			continue;
 		}
 
+		// Get quad position
+		const Eigen::Vector3d pos = 
+			helper::Point2vec3d(it->vehicle_odom.pose.pose.position);
+
 		// Get distance between quad and all planes
 		std::vector<double> dist;
 		std::vector<Eigen::Vector3d> normal;
-		arena_box_.DistancePoint2Planes(
-				helper::Point2vec3d(it->ml_reference.Pos),
-                &dist, &normal);
+		arena_box_.DistancePoint2Planes(pos, &dist, &normal);
+
+		// Get distance to bottom plane if quad isn't taking off/landing
+		if(!it->is_takeoff_landing) {
+			arena_box_.DistancePoint2BottomPlane(pos, &dist, &normal);
+		}
+
+		// Get distance between quad and cylindric obstacles
+		cylindrical_obstacles_.DistancePoint2Cylinders(
+			pos, &dist, &normal);
 
 		// Calculate reaction forces between quad and planes
 		for (uint i = 0; i < dist.size(); i++) {
@@ -345,6 +391,7 @@ void MediationLayer::PublishMLReferences() {
 	std::set<QuadData>::iterator it;
 	for(it = quads_.begin(); it != quads_.end(); ++it) {
 		if(it->ref_is_active) {
+			// std::cout << it->name << std::endl;
 			it->pub_mediation_layer.publish(it->ml_reference);	
 		}
 	}

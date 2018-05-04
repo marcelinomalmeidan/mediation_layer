@@ -75,6 +75,17 @@ void CuboidMarker(const Eigen::Vector3d &point,
                   const int &seqNumber,
                   visualization_msgs::MarkerArray *markerArray);
 
+// Upright cylinder marker
+void CylinderMarker(const Eigen::Vector3d &point,
+                    const std::string frame_id,
+                    const std::string &ns,  // namespace
+                    const double &height,
+                    const double &radius,
+                    const std_msgs::ColorRGBA &color,
+                    const double &transparency,  // 0 -> transparent, 1 -> opaque
+                    const int &seqNumber,
+                    visualization_msgs::MarkerArray *markerArray);
+
 // Quadcopter mesh
 void MeshMarker(const Eigen::Vector3d &point,
                 const Eigen::Quaterniond &quat,

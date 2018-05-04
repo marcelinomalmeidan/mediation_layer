@@ -11,6 +11,7 @@ void MediationLayerThread(const double &rate) {
     double dt = 1/rate;
     ros::Rate loop_rate(rate);
     const double quad_radius = 0.25;
+    bool game_started = false;
 
     // Run the Mediation Layer loop
     while (ros::ok()) {
@@ -19,6 +20,15 @@ void MediationLayerThread(const double &rate) {
         // Update mediation layer
         pthread_mutex_lock(&mutexes_.m_ml_class);
 
+            // See if quads are ready to start the game
+            if(!game_started) {
+                if(globals_.obj_mid_layer.AreAllQuadsReady()) {
+                    globals_.obj_mid_layer.TriggerGameStart();
+                    std::cout << "All quads are ready!" << std::endl;
+                    game_started = true;
+                }
+            }
+
             // Reset reaction forces
             globals_.obj_mid_layer.ResetForces();
 
@@ -26,7 +36,7 @@ void MediationLayerThread(const double &rate) {
             globals_.obj_mid_layer.UpdateVehicleReactionForces();
 
             // Update reaction forces between the quads and the walls
-            globals_.obj_mid_layer.UpdateArenaReactionForces();
+            globals_.obj_mid_layer.UpdateFixedObstaclesReactionForces();
 
             // Integrate ML diff. equations and update references
             globals_.obj_mid_layer.UpdateMediationLayerOutputs(dt);
@@ -190,15 +200,22 @@ void StaticObjectsVisualizationThread() {
 
 	const std::string frame_id = "world";
 	const std::string ground_ns = "ground";
+    const std::string balloon_ns = "balloons";
+    const std::string obstacle_ns = "cylindrical_obstacles";
 
 	const std_msgs::ColorRGBA ground_color = visualization_functions::Color::DarkGreen();
-	const double gound_transparency = 1.0;
-    const std::string balloon_mesh = "balloon.stl";
-    const std::string balloon_ns = "balloons";
-    const double balloon_size = 20.0;
+	const std_msgs::ColorRGBA cylinder_color = visualization_functions::Color::Yellow();
+
+    const double ground_transparency = 1.0;
     const double balloon_transparency = 1.0;
-    const Eigen::Vector3d balloon_offset(0.0, 0.0, -0.75);
+    const double cylinder_transparency = 0.35;
+
+    const std::string balloon_mesh = "balloon.stl";
+    const double balloon_size = 20.0;
+    const Eigen::Vector3d balloon_offset(0.0, 0.0, -0.6);
     const Eigen::Quaterniond balloon_att(1.0, 0.0, 0.0, 0.0);
+
+    CylindricalObstacleSet cylindrical_obstacles;
     BoxPlanes arena_box;
     BalloonSet balloons;
     ros::Publisher pub_vis;
@@ -215,6 +232,7 @@ void StaticObjectsVisualizationThread() {
 	    pthread_mutex_lock(&mutexes_.m_ml_class);
             pub_vis = globals_.obj_mid_layer.pub_vis_;
             arena_box = globals_.obj_mid_layer.arena_box_;
+            cylindrical_obstacles = globals_.obj_mid_layer.cylindrical_obstacles_;
 	    pthread_mutex_unlock(&mutexes_.m_ml_class);
         pthread_mutex_lock(&mutexes_.m_balloons);
             balloons = globals_.balloons;
@@ -228,7 +246,7 @@ void StaticObjectsVisualizationThread() {
 
 		visualization_functions::PlaneMarker(corner1, corner2,
                  corner3, corner4, frame_id, ground_ns, ground_color,
-                 gound_transparency, &static_obj_markers);
+                 ground_transparency, &static_obj_markers);
 
 	    arena_box.VisualizeBox(frame_id, &static_obj_markers);
 
@@ -244,6 +262,18 @@ void StaticObjectsVisualizationThread() {
                     balloon_att, frame_id, balloon_ns, balloon_mesh, balloon_size,
                     balloons.balloons_[i].color_, balloon_transparency, i, &static_obj_markers);
             }
+        }
+
+        // Get markers for cylindrical obstacles
+        for (uint i = 0; i < cylindrical_obstacles.GetNumObstacles(); i++) {
+            Eigen::Vector3d cyl_center;
+            double height, radius;
+            cylindrical_obstacles.cyl_obstacle_set_[i].
+                GetParameters(&cyl_center, &height, &radius);
+
+            visualization_functions::CylinderMarker(cyl_center,
+                    frame_id, obstacle_ns, height, radius, cylinder_color,
+                    cylinder_transparency, i, &static_obj_markers);
         }
 
 
@@ -266,21 +296,21 @@ void VisualizationThread(const double &rate) {
     const std::string frame_id = "world";
     const std::string quad_mesh = "quadrotor_base.dae";
     const double quad_size = 0.375;
-    const double sphere_transparency = 0.1;
+    const double sphere_transparency = 0.2;
     const double shield_transparency = 0.25;
+    const double reference_transparency = 0.5;
+    const double pos_transparency = 1.0;
     const std_msgs::ColorRGBA frame_color = visualization_functions::Color::White();
-    const std_msgs::ColorRGBA sphere_color = visualization_functions::Color::White();
+    const std_msgs::ColorRGBA sphere_color_game = visualization_functions::Color::White();
+    const std_msgs::ColorRGBA sphere_color_takeoff_land = visualization_functions::Color::Orange();
     const std_msgs::ColorRGBA text_color = visualization_functions::Color::Black();
     const std_msgs::ColorRGBA force_color = visualization_functions::Color::Red();
     const std_msgs::ColorRGBA shield_color = visualization_functions::Color::Teal();
-    const double reference_transparency = 0.5;
-    const double pos_transparency = 1.0;
     const double reference_size = 0.1;
     const double max_force_marker_length = 10.0;
     visualization_msgs::MarkerArray quadArray;
     std::set<QuadData> quad_list;
     ros::Publisher pub_vis;
-    double max_acc;
 
     pthread_mutex_lock(&mutexes_.m_ml_class);
     	const double sphere_size = globals_.obj_mid_layer.d_thresh_;
@@ -339,9 +369,16 @@ void VisualizationThread(const double &rate) {
                     helper::Point2vec3d(it->vehicle_odom.pose.pose.position);
                 
                 // Get marker for sphere of influence of each quad
-                visualization_functions::SphereMarker(position,
-                            frame_id, it->name, sphere_size, sphere_color, 
-                            sphere_transparency, 3, &quadArray);
+                if (it->is_takeoff_landing){
+                    visualization_functions::SphereMarker(position,
+                        frame_id, it->name, sphere_size, sphere_color_takeoff_land, 
+                        sphere_transparency, 3, &quadArray);    
+                } else {
+                    visualization_functions::SphereMarker(position,
+                        frame_id, it->name, sphere_size, sphere_color_game, 
+                        sphere_transparency, 3, &quadArray); 
+                }
+                
 
                 // Get shield plane marker
                 if(it->has_shield) {

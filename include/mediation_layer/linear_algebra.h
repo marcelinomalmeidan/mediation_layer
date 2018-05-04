@@ -33,15 +33,16 @@ class Line3d{
 
     // Constructor: returns line that goes through two points p1, p2
     Line3d(const Eigen::Vector3d &p1,
-            const Eigen::Vector3d &p2) {
+           const Eigen::Vector3d &p2) {
         p0_ = p1;
         vec_ = p1 - p2;
     }
 
     // Methods
-    // Calculate the distance between one point and the line
-    void DistancePoint2Line(const Eigen::Vector3d &point,
-                            double *dist) {
+    // Find point in line that minimizes distance to point
+    void ProjectPointOntoLine(const Eigen::Vector3d &point,
+                              Eigen::Vector3d *proj_point,
+                              double *dist) {
         // Two points on the line
         const Eigen::Vector3d x1 = p0_;
         const Eigen::Vector3d x2 = p0_ + vec_;
@@ -60,6 +61,14 @@ class Line3d{
         const Eigen::Vector3d p_opt = x1 + t_opt*vec_;
 
         *dist = (point - p_opt).norm();
+        *proj_point = p_opt;
+    }
+
+    // Calculate the distance between one point and the line
+    void DistancePoint2Line(const Eigen::Vector3d &point,
+                            double *dist) {
+        Eigen::Vector3d proj_point;
+        this->ProjectPointOntoLine(point, &proj_point, dist);
     }
 };
 
@@ -228,31 +237,46 @@ class BoxPlanes{
 
     // Methods ---------------------------------------------------
     
-    // Returns distance between point and all the planes with their
-    // respective normal directions
+    // Returns distance between point and all the planes (except bottom)
+    // with their respective normal directions
     void DistancePoint2Planes(const Eigen::Vector3d &point,
                               std::vector<double> *dist,
                               std::vector<Eigen::Vector3d> *normal) {
         std::vector<double> local_dist;
         std::vector<Eigen::Vector3d> local_normal;
-        local_dist.resize(6);
-        local_normal.resize(6);
+        local_dist.resize(5);
+        local_normal.resize(5);
 
-        bottom_plane_.DistancePoint2Plane(point, &local_dist[0]);
-        local_normal[0] = bottom_plane_.normal_;
-        upper_plane_.DistancePoint2Plane(point, &local_dist[1]);
-        local_normal[1] = upper_plane_.normal_;
-        left_plane_.DistancePoint2Plane(point, &local_dist[2]);
-        local_normal[2] = left_plane_.normal_;
-        right_plane_.DistancePoint2Plane(point, &local_dist[3]);
-        local_normal[3] = right_plane_.normal_;
-        back_plane_.DistancePoint2Plane(point, &local_dist[4]);
-        local_normal[4] = back_plane_.normal_;
-        front_plane_.DistancePoint2Plane(point, &local_dist[5]);
-        local_normal[5] = front_plane_.normal_;
+        // bottom_plane_.DistancePoint2Plane(point, &local_dist[0]);
+        // local_normal[0] = bottom_plane_.normal_;
+        upper_plane_.DistancePoint2Plane(point, &local_dist[0]);
+        local_normal[0] = upper_plane_.normal_;
+        left_plane_.DistancePoint2Plane(point, &local_dist[1]);
+        local_normal[1] = left_plane_.normal_;
+        right_plane_.DistancePoint2Plane(point, &local_dist[2]);
+        local_normal[2] = right_plane_.normal_;
+        back_plane_.DistancePoint2Plane(point, &local_dist[3]);
+        local_normal[3] = back_plane_.normal_;
+        front_plane_.DistancePoint2Plane(point, &local_dist[4]);
+        local_normal[4] = front_plane_.normal_;
 
         *dist = local_dist;
         *normal = local_normal;
+    }
+
+    // Returns distance between point and bottom plane
+    // with the respective normal direction
+    void DistancePoint2BottomPlane(const Eigen::Vector3d &point,
+                                   std::vector<double> *dist,
+                                   std::vector<Eigen::Vector3d> *normal) {
+        double local_dist;
+        Eigen::Vector3d local_normal;
+
+        bottom_plane_.DistancePoint2Plane(point, &local_dist);
+        local_normal = bottom_plane_.normal_;
+
+        dist->push_back(local_dist);
+        normal->push_back(local_normal);
     }
 
     // Return visualization markers for box visualization

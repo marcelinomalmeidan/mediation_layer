@@ -10,6 +10,7 @@
 #include "mediation_layer/callbacks.h"
 #include "mediation_layer/services.h"
 #include "mediation_layer/helper.h"
+#include "mediation_layer/cylindrical_obstacles.h"
 
 // Structs for global variables
 #include "mediation_layer/structs.h"

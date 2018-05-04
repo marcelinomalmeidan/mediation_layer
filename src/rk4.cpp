@@ -6,7 +6,8 @@ rk4::rk4() {
 }
 
 rk4::rk4(const double &k, const double &kd,
-         const double &max_vel, const double &max_acc) {
+         const double &max_vel, const double &max_acc,
+         const double &max_input_acc) {
 	// x_dim_ = 6;
 	// u_dim_ = 3;
 	// state_ = Eigen::MatrixXd::Zero(x_dim_, 1);
@@ -23,6 +24,7 @@ rk4::rk4(const double &k, const double &kd,
 
 	max_acc_ = max_acc;
 	max_vel_ = max_vel;
+	max_input_acc_ = max_input_acc;
 	K_ = k*Eigen::Matrix3d::Identity();
 	Kd_ = kd*Eigen::Matrix3d::Identity();
 	y_ = Eigen::Vector3d::Zero();
@@ -96,17 +98,13 @@ void rk4::DifferentialEquation(const Eigen::Vector3d &F,
 	y_dot << state0[3], state0[4], state0[5];
 	e = yd - y;
 	e_dot = yd_dot - y_dot;
-	y_ddot = yd_ddot + K_*e + Kd_*e_dot + F;
 
-	// helper::printVector3d("y", y);
-	// helper::printVector3d("yd", yd);
-	// helper::printVector3d("e", e);
-	// helper::printVector3d("y_dot", y_dot);
-	// helper::printVector3d("yd_dot", yd_dot);
-	// helper::printVector3d("e_dot", e_dot);
-	// helper::printVector3d("F", F);
-	// helper::printVector3d("y_ddot", y_ddot);
-	// helper::printVector3d("yd_ddot", yd_ddot);
+	Eigen::Vector3d input_acc = yd_ddot + K_*e + Kd_*e_dot;
+	if(input_acc.norm() > max_input_acc_) {
+		input_acc = max_input_acc_*input_acc/input_acc.norm();
+	}
+
+	y_ddot = input_acc + F;
 
 	// Cap acceleration to maximum value
 	if(y_ddot.norm() > max_acc_) {

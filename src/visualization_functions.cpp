@@ -152,6 +152,38 @@ void CuboidMarker(const Eigen::Vector3d &point,
     markerArray->markers.push_back(marker);
 }
 
+// Upright cylinder marker
+void CylinderMarker(const Eigen::Vector3d &point,
+                    const std::string frame_id,
+                    const std::string &ns,  // namespace
+                    const double &height,
+                    const double &radius,
+                    const std_msgs::ColorRGBA &color,
+                    const double &transparency,  // 0 -> transparent, 1 -> opaque
+                    const int &seqNumber,
+                    visualization_msgs::MarkerArray *markerArray) {
+	visualization_msgs::Marker marker;
+	marker.type = visualization_msgs::Marker::CYLINDER;
+	marker.action = visualization_msgs::Marker::ADD;
+	marker.color = color;
+	marker.color.a = transparency;
+	marker.scale.x = 2*radius;
+	marker.scale.y = 2*radius;
+	marker.scale.z = height;
+	marker.ns = ns;
+	marker.header.frame_id = frame_id;
+	marker.header.stamp = ros::Time::now();
+	marker.pose.orientation.w = 1.0;
+
+	geometry_msgs::Point position;
+	position.x = point(0);
+	position.y = point(1);
+	position.z = point(2);
+	marker.pose.position = position;
+	marker.id = seqNumber;
+	markerArray->markers.push_back(marker);
+}
+
 void MeshMarker(const Eigen::Vector3d &point,
 	            const Eigen::Quaterniond &quat,
 	            const std::string &frame_id,

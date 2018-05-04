@@ -31,8 +31,8 @@
     <rosparam param="arena_corner2"> [10.0, 2.5, 4.0]</rosparam>
 
     <!-- Balloons -->
-    <rosparam param="BalloonPosition"> [-7.5, 0.0, 2.0,
-                                         7.5, 0.0, 2.0] </rosparam>
+    <rosparam param="BalloonPosition"> [-7.5, 0.0, 1.425,
+                                         7.5, 0.0, 1.425] </rosparam>
     <rosparam param="BalloonColors"> ["red", "blue"] </rosparam>
 
     <!-- Mediation layer integrator parameters -->
@@ -60,6 +60,7 @@
     <param name="output_ref_topic" value="/px4_control/PVA_Ref_ML"/>
     <param name="visualization_topic" value="/mediation_layer/Visualization"/>
     <param name="game_state_topic" value="/mediation_layer/Game_State"/>
+    <param name="game_start_topic" value="/mediation_layer/Start_Game"/>
 
   </node>
 

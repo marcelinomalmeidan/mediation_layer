@@ -9,11 +9,15 @@
 #include "mediation_layer/visualization_functions.h"
 #include "mediation_layer/linear_algebra.h"
 #include "mediation_layer/rk4.h"
+#include "mediation_layer/balloon_class.h"
+#include "mediation_layer/cylindrical_obstacles.h"
 
-
+// ROS message types
+#include "std_msgs/Empty.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "nav_msgs/Odometry.h"
 
+// User-defined message types
 #include "mg_msgs/PVA.h"
 #include "mg_msgs/GameState.h"
 
@@ -24,6 +28,7 @@ struct QuadData {
     mutable nav_msgs::Odometry vehicle_odom;     // Measured odometry
     mutable Eigen::Vector3d force_field;         // Field for saving ML force input
     mutable bool has_shield;                     // Shield for defending quads
+    mutable bool is_takeoff_landing;             // Indicates whether quad is taking off / landing
     mutable bool ref_is_active;                  // Flag indicating health of references
     mutable bool odom_is_active;                 // Flag indicating health of measurements
     mutable ros::Time last_reference_stamp;      // For heartbeat
@@ -43,9 +48,11 @@ class MediationLayer {
  public:
  	std::set<QuadData> quads_;
     BoxPlanes arena_box_;
+    CylindricalObstacleSet cylindrical_obstacles_;
  	uint n_quads_;
     ros::Publisher pub_vis_;        // Publisher for visualization
     ros::Publisher pub_game_state_; // Publisher for game state
+    ros::Publisher pub_start_game_; // Publisher for triggering the start of the game
     double max_acc_ = 6.0;          // Maximum integrator acceleration
     double max_vel_ = 2.5;          // Maximum integrator velocity
     double max_in_acc_ = 2.5;       // Maximum input acceleration
@@ -60,6 +67,7 @@ class MediationLayer {
     MediationLayer();
     MediationLayer(const std::string &visualization_topic,
                    const std::string &game_state_topic,
+                   const std::string &game_start_topic,
                    const Eigen::Vector3d &arena_corner1,
                    const Eigen::Vector3d &arena_corner2,
                    const double &max_acc,
@@ -81,6 +89,9 @@ class MediationLayer {
                  const bool has_shield,
                  const std::string &output_topic,
                  ros::NodeHandle *nh);
+    bool AreAllQuadsReady();
+    void TriggerGameStart();
+    void AddBalloonRodObstacles(const BalloonSet &balloon_set);
     void FindQuadIndex(const std::string &name,
     	               std::set<QuadData>::iterator *index);  // Returns -1 if it can't find
     void ResetForces();
@@ -89,7 +100,7 @@ class MediationLayer {
     void UpdateQuadOdom(const std::string &name, 
                         const nav_msgs::Odometry &odom);
     void UpdateVehicleReactionForces();
-    void UpdateArenaReactionForces();
+    void UpdateFixedObstaclesReactionForces();
     void UpdateMediationLayerOutputs(const double &dt);
     void PublishMLReferences();
     void GetQuadPositions(std::vector<Eigen::Vector3d> *quad_positions);

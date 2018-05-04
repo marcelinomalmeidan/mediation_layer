@@ -21,7 +21,8 @@ class rk4 {  // Runge-kutta for time-invariant systems
  	rk4(const double &k,
  		const double &kd,
         const double &max_vel,
-        const double &max_acc);
+        const double &max_acc,
+        const double &max_input_acc);
 
  	// Methods
  	// void DifferentialEquation(const Eigen::Vector3d &F, 
@@ -58,6 +59,7 @@ class rk4 {  // Runge-kutta for time-invariant systems
     Eigen::Matrix3d Kd_;
     double max_acc_;
     double max_vel_;
+    double max_input_acc_;
     // Eigen::MatrixXd A_;
     // Eigen::MatrixXd B_;
     // uint x_dim_;
