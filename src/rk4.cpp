@@ -30,6 +30,7 @@ rk4::rk4(const double &k, const double &kd,
 	y_ = Eigen::Vector3d::Zero();
 	y_dot_ = Eigen::Vector3d::Zero();
 	y_ddot_ = Eigen::Vector3d::Zero();
+	max_yaw_dot_ = 1.5;
 	// std::cout << "A:\n" << A << std::endl;
 	// std::cout << "B:\n" << B << std::endl;
 }
@@ -129,6 +130,29 @@ void rk4::DifferentialEquation(const Eigen::Vector3d &F,
 	*state_dot = x_dot;
 }
 
+void rk4::DifferentialYawEquation(const double &yaw0,
+                                  const double &yaw_ref,
+                                  double *yaw_dot) {
+	const double k = K_(0,0);
+
+	// Get reference between -pi and pi
+	const double ref = fmod(yaw_ref, M_PI);
+
+	double e = yaw_ref - yaw0;
+	if (e > M_PI) {
+		e = e - 2*M_PI;
+	} else if (e < -M_PI) {
+		e = e + 2*M_PI;
+	}
+
+	double yaw_vel = k*e; 
+	if(fabs(yaw_vel) > max_yaw_dot_) {
+		yaw_vel = copysign(max_yaw_dot_, yaw_vel);
+	}
+
+	*yaw_dot = yaw_vel;
+}
+
 void rk4::UpdateStates(const Eigen::Vector3d &F,
 					   const mg_msgs::PVA &Ref,
 	          	       const double &dt) {
@@ -149,14 +173,20 @@ void rk4::UpdateStates(const Eigen::Vector3d &F,
 	y_dot_ << state[3], state[4], state[5];
 	y_ddot_ = Eigen::Vector3d(k1[3], k1[4], k1[5]);
 
-	// Euler integration (instead of rung kutta)
-	// double k = 4.0; double kd = 3.0;
-	// Eigen::Vector3d yd, yd_dot, yd_ddot;
-	// yd << Ref.Pos.x, Ref.Pos.y, Ref.Pos.z;
-	// yd_dot << Ref.Vel.x, Ref.Vel.y, Ref.Vel.z;
-	// yd_ddot << Ref.Acc.x, Ref.Acc.y, Ref.Acc.z;
-	// y_ = y_ + dt*y_dot_;
-	// y_dot_ << y_dot_ + dt*(yd_ddot - k*(y_-yd) - kd*(y_dot_-yd_dot));
+	// Integrate yaw
+	double ky1, ky2, ky3, ky4;
+	double yaw_ref = Ref.yaw;
+	this->DifferentialYawEquation(yaw_, yaw_ref, &ky1);
+	this->DifferentialYawEquation(yaw_ + dt_half*ky1, yaw_ref, &ky2);
+	this->DifferentialYawEquation(yaw_ + dt_half*ky2, yaw_ref, &ky3);
+	this->DifferentialYawEquation(yaw_ + dt*ky3, yaw_ref, &ky4);
+	double deltaYaw = dt*(ky1 + 2.0*ky2 + 2.0*ky3 + ky4)/6.0;
+	yaw_ = yaw_ + deltaYaw;
+	if (yaw_ < -M_PI) {
+		yaw_ = yaw_ + 2*M_PI;
+	} else if(yaw_ > M_PI) {
+		yaw_ = yaw_ - 2*M_PI;
+	}
 }
 
 // void rk4::ResetStates() {
@@ -216,4 +246,8 @@ void rk4::GetAcc(geometry_msgs::Vector3 *acc) {
 	acc->x = eigen_acc[0];
 	acc->y = eigen_acc[1];
 	acc->z = eigen_acc[2];
+}
+
+void rk4::GetYaw(double *yaw) {
+	*yaw = yaw_;
 }

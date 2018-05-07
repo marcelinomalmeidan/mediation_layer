@@ -108,6 +108,13 @@ void MediationLayer::TriggerGameStart() {
     pub_start_game_.publish(empty_msg);
 }
 
+void MediationLayer::SetQuadsLanding() {
+    std::set<QuadData>::iterator it;
+    for(it = quads_.begin(); it != quads_.end(); ++it) {
+    	it->is_takeoff_landing = true;
+    }
+}
+
 
 void MediationLayer::AddBalloonRodObstacles(const BalloonSet &balloon_set) {
 	std::vector<Eigen::Vector3d> balloon_positions;
@@ -370,9 +377,11 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 		// Get outputs from the error_integrator
 		geometry_msgs::Point pos;
 		geometry_msgs::Vector3 pos_dot, pos_ddot;
+		double yaw;
 		it->error_integrator.GetPos(&pos);
 		it->error_integrator.GetVel(&pos_dot);
 		it->error_integrator.GetAcc(&pos_ddot);
+		it->error_integrator.GetYaw(&yaw);
 
 		// Populate structure for new reference data
 		mg_msgs::PVA ml_reference;
@@ -380,7 +389,7 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 		ml_reference.Pos = pos;
 		ml_reference.Vel = pos_dot;
 		ml_reference.Acc = pos_ddot;
-		ml_reference.yaw = it->reference.yaw;
+		ml_reference.yaw = yaw;
 
 		// Set new reference data
 		it->ml_reference = ml_reference;

@@ -91,6 +91,7 @@ class MediationLayer {
                  ros::NodeHandle *nh);
     bool AreAllQuadsReady();
     void TriggerGameStart();
+    void SetQuadsLanding();
     void AddBalloonRodObstacles(const BalloonSet &balloon_set);
     void FindQuadIndex(const std::string &name,
     	               std::set<QuadData>::iterator *index);  // Returns -1 if it can't find

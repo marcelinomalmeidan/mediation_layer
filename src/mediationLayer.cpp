@@ -131,6 +131,10 @@ int main(int argc, char** argv){
   ros::ServiceServer takeoff_land_srv = node.advertiseService
        ("/mediation_layer/request_to_land_quad", services::SetTakeOffLanding);
 
+  // Callbacks -----------------------------------------
+  ros::Subscriber land_sub = node.subscribe
+       ("/mediation_layer/land_quads", 1, callbacks::LandCallback);
+
   // Threads -------------------------------------------
   std::thread h_mediation_layer_thread, h_visualization_thread;
   std::thread h_static_visualization_thread, h_heartbeat_thread;
