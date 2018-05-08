@@ -113,6 +113,12 @@ double deg2rad(double degVal);
 //Convert radians to degrees
 double rad2deg(double radVal);
 
+// Get heading angle from quaternion
+double getHeadingFromQuat(geometry_msgs::Quaternion quat);
+
+// Conversion from quaternion to roll/pitch/yaw
+geometry_msgs::Vector3 quat2rpy(geometry_msgs::Quaternion quat);
+
 }  // namespace helper
 
 #endif  // HELPER_H_

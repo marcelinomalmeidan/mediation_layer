@@ -233,4 +233,28 @@ double rad2deg(double radVal){
 	return radVal*180.0/M_PI;
 }
 
+// Get heading angle from quaternion
+double getHeadingFromQuat(geometry_msgs::Quaternion quat){
+	geometry_msgs::Vector3 RPY = quat2rpy(quat);
+	return RPY.z;
+}
+
+// Conversion from quaternion to roll/pitch/yaw
+geometry_msgs::Vector3 quat2rpy(geometry_msgs::Quaternion quat){
+	double qx, qy, qz, qw, roll, pitch, yaw;
+	qx = quat.x;
+	qy = quat.y;
+	qz = quat.z;
+	qw = quat.w;
+
+	//Formulas for roll, pitch, yaw
+	roll = atan2(2*(qw*qx + qy*qz) , 1 - 2*(qx*qx + qy*qy) );
+	pitch = asin(2*(qw*qy - qz*qx));
+	yaw = atan2(2*(qw*qz + qx*qy),1 - 2*(qy*qy + qz*qz) );
+
+	geometry_msgs::Vector3 rpy = SetVector3(roll, pitch, yaw);
+	return rpy;
+}
+
+
 }  // namespace helper

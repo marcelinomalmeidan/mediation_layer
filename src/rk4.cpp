@@ -205,7 +205,8 @@ void rk4::ResetStates(const nav_msgs::Odometry &odom) {
 	      odom.pose.pose.position.y,
 	      odom.pose.pose.position.z;
 	y_dot_ << 0.0, 0.0, 0.0;
-	y_ddot_ << 0.0, 0.0, 0.0;	
+	y_ddot_ << 0.0, 0.0, 0.0;
+	yaw_ = helper::getHeadingFromQuat(odom.pose.pose.orientation);
 }
 
 void rk4::GetPos(Eigen::Vector3d *pos) {
