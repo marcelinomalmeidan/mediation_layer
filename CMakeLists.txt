@@ -48,3 +48,12 @@ add_dependencies(mediation_layer mg_msgs_generate_messages_cpp)
 
 install(TARGETS mediation_layer
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+add_executable(land_quads 
+               src/land_quads.cpp)
+target_link_libraries(land_quads ${catkin_LIBRARIES})
+add_dependencies(land_quads ${catkin_EXPORTED_TARGETS})
+add_dependencies(land_quads mg_msgs_generate_messages_cpp)
+
+install(TARGETS land_quads
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

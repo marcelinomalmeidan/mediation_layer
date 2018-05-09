@@ -121,7 +121,7 @@ void MediationLayer::AddBalloonRodObstacles(const BalloonSet &balloon_set) {
 	balloon_set.GetBalloonPositions(&balloon_positions);
 	
 	// Set the obstacles for the balloon rods
-	const double height = 1.2;
+	const double height = 1.36;
 	const double radius = d_thresh_/2.0;
 	for (uint i = 0; i < balloon_positions.size(); i++) {
 		// Rod has a height of 1.2m

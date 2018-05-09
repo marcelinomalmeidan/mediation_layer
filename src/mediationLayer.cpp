@@ -133,7 +133,7 @@ int main(int argc, char** argv){
 
   // Callbacks -----------------------------------------
   ros::Subscriber land_sub = node.subscribe
-       ("/mediation_layer/land_quads", 1, callbacks::LandCallback);
+       ("/mediation_layer/land_quads", 10, callbacks::LandCallback);
 
   // Threads -------------------------------------------
   std::thread h_mediation_layer_thread, h_visualization_thread;
