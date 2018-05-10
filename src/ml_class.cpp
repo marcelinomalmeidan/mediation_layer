@@ -221,6 +221,10 @@ void MediationLayer::UpdateVehicleReactionForces() {
 				helper::Point2vec3d(it1->vehicle_odom.pose.pose.position);
 			const Eigen::Vector3d pos2 = 
 				helper::Point2vec3d(it2->vehicle_odom.pose.pose.position);
+			// const Eigen::Vector3d pos1 = 
+			// 	helper::Point2vec3d(it1->ml_reference.Pos);
+			// const Eigen::Vector3d pos2 = 
+			// 	helper::Point2vec3d(it2->ml_reference.Pos);
 
 			// Get distance magnitude and direction
 			Eigen::Vector3d dist_vec = pos1 - pos2;
@@ -326,6 +330,8 @@ void MediationLayer::UpdateFixedObstaclesReactionForces() {
 		// Get quad position
 		const Eigen::Vector3d pos = 
 			helper::Point2vec3d(it->vehicle_odom.pose.pose.position);
+		// const Eigen::Vector3d pos = 
+		// 	helper::Point2vec3d(it->ml_reference.Pos);
 
 		// Get distance between quad and all planes
 		std::vector<double> dist;
@@ -389,6 +395,7 @@ void MediationLayer::UpdateMediationLayerOutputs(const double &dt) {
 		ml_reference.Pos = pos;
 		ml_reference.Vel = pos_dot;
 		ml_reference.Acc = pos_ddot;
+		// ml_reference.Acc = helper::SetVector3(0.0, 0.0, 0.0);
 		ml_reference.yaw = yaw;
 
 		// Set new reference data
